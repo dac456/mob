@@ -7,9 +7,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 # Boost
+unset(Boost_INCLUDE_DIR CACHE)
+unset(Boost_LIBRARY_DIRS CACHE)
+
 find_package(Boost REQUIRED system filesystem thread)
 link_directories(${Boost_LIBRARY_DIRS})
-include_directories(${BOOST_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIR})
 
 # libmob
 file(GLOB_RECURSE LIB_HDR RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS libmob/include/*.h)
