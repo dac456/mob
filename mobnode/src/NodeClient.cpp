@@ -3,34 +3,41 @@
 namespace MobNode
 {
     
-    NodeClient::NodeClient(asio::io_service& service) : _socket(service){
-        asio::ip::tcp::resolver resolver(service);
-        asio::ip::tcp::resolver::query query("127.0.0.1", boost::lexical_cast<std::string>(9001));
+    NodeClient::NodeClient(asio::io_service& service, std::string addr) : _socket(service){
+        asio::ip::udp::resolver resolver(service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, boost::lexical_cast<std::string>(9001));
+
+        asio::ip::udp::endpoint receiverEndpoint = *resolver.resolve(query);
+
+        //asio::ip::udp::socket sck(service);
+        _socket.open(asio::ip::udp::v4());
+        //_socket.async_send_to(asio::buffer("hello server"), receiverEndpoint, boost::bind(&NodeClient::_onSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
         
-        asio::ip::tcp::resolver::iterator itr = resolver.resolve(query);
-        asio::ip::tcp::endpoint endPoint = *itr;
-        
-        _socket.async_connect(endPoint, boost::bind(&NodeClient::onConnect, this, asio::placeholders::error, itr++));
-    }
-    
-    void NodeClient::onConnect(const boost::system::error_code& err, asio::ip::tcp::resolver::iterator itr){
-        if(!err){
-            _socket.async_receive(asio::buffer(_buffer, 512), boost::bind(&NodeClient::onReceive, this, asio::placeholders::error));
+        //_socket.async_connect(receiverEndpoint, boost::bind(&NodeClient::onConnect, this, asio::placeholders::error, itr++));
+        //TODO: broadcast and find all nodes on network
+        boost::system::error_code error;
+        asio::ip::udp::socket broadSocket(service);
+        broadSocket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broadSocket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broadSocket.set_option(asio::socket_base::broadcast(true));
+
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            broadSocket.send_to(asio::buffer("hello broadcast"), senderEndpoint);
+            broadSocket.close(error);
         }
         else{
-            //TODO: try again
+            std::cout << "broadcast error" << std::endl;
         }
+
     }
-    
-    void NodeClient::onReceive(const boost::system::error_code& err){
-        if(!err){
-            std::cout << _buffer << std::endl;
-            
-            _socket.async_receive(asio::buffer(_buffer, 512), boost::bind(&NodeClient::onReceive, this, asio::placeholders::error));
-        }
-        else{
-            _socket.close();
-        }
+
+    NodeClient::~NodeClient(){
+        _socket.close();
+    }
+
+    void NodeClient::_onSend(const boost::system::error_code& err, const size_t bytesSent){
+        _socket.close();
     }
 
 }

@@ -8,14 +8,15 @@ namespace MobNode
 
     class NodeClient{
     private:
-        asio::ip::tcp::socket _socket;
+        asio::ip::udp::socket _socket;
         char _buffer[512];
         
     public:
-        NodeClient(asio::io_service& service);
-        
-        void onConnect(const boost::system::error_code& err, asio::ip::tcp::resolver::iterator itr);
-        void onReceive(const boost::system::error_code& err);
+        NodeClient(asio::io_service& service, std::string addr);
+        ~NodeClient();
+
+    private:
+        void _onSend(const boost::system::error_code& err, const size_t bytesSent);
     };
 
 }

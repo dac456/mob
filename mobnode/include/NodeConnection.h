@@ -8,11 +8,11 @@ namespace MobNode
 
     class NodeConnection : public boost::enable_shared_from_this<NodeConnection>{
     private:
-        asio::ip::tcp::socket _socket;
+        asio::ip::udp::socket _socket;
         
     public:
         NodeConnection(asio::io_service& service);
-        asio::ip::tcp::socket& getSocket();
+        asio::ip::udp::socket& getSocket();
         
     private:
         void _handleWrite(const boost::system::error_code& err, size_t bytesTransferred);

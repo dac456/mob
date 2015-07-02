@@ -6,7 +6,7 @@ namespace MobNode
     NodeConnection::NodeConnection(asio::io_service& service) : _socket(service){
     }
     
-    asio::ip::tcp::socket& NodeConnection::getSocket(){
+    asio::ip::udp::socket& NodeConnection::getSocket(){
         return _socket;
     }
     

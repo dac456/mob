@@ -8,7 +8,9 @@ namespace MobNode
 
     class NodeServer{
     private:
-        asio::ip::tcp::acceptor _acc;
+        asio::ip::udp::socket _socket;
+        asio::ip::udp::endpoint _senderEndpoint;
+        char _buffer[512];
         
     public:
         NodeServer(asio::io_service& service);
@@ -16,7 +18,8 @@ namespace MobNode
         
     private:
         void _startAccept();
-        void _handleAccept(NodeConnectionPtr session, const boost::system::error_code& err);
+        void _handleReceive(const boost::system::error_code& err, const size_t bytesReceived);
+        void _handleSend(const boost::system::error_code& err, const size_t bytesSent);
     };
 
 }

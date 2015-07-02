@@ -8,14 +8,15 @@ int main(int argc, char* argv[]){
     std::shared_ptr<MobNode::NodeServer> server = std::make_shared<MobNode::NodeServer>(serverService);
     boost::thread srv(boost::bind(&asio::io_service::run, &serverService));
     
-    std::shared_ptr<MobNode::NodeClient> client = std::make_shared<MobNode::NodeClient>(clientService);
+    //TODO: create for each node we want to talk to?
+    //      or have on Client wrap all outgoing comm. ?
+    std::shared_ptr<MobNode::NodeClient> client = std::make_shared<MobNode::NodeClient>(clientService, "127.0.0.1");
     boost::thread cli(boost::bind(&asio::io_service::run, &clientService));
     
     //srv.join();
     //cli.join();
-    for(;;){
-        
-    }
+
+    for(;;); //Keep the main thread busy
     
     return 0;
 }
