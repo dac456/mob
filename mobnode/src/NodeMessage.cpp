@@ -15,30 +15,35 @@ namespace MobNode
     NodeMessage::~NodeMessage(){
         if(_body.body != nullptr){
             delete[] _body.body;
+            _body.body = nullptr;
         }
     }
     
+    MSG_TYPE NodeMessage::getType(){
+        return static_cast<MSG_TYPE>(_header.msgType);
+    }
     
-    void NodeMessage::setData(char* data, size_t dataLength){
+    void NodeMessage::setData(const char* data, size_t dataLength){
         if(_body.body != nullptr){
             delete[] _body.body;
         }
         
-        _body.body = new char[dataLength];
+        _body.body = new char[dataLength + 1];
         memcpy(_body.body, data, dataLength);
+        _body.body[dataLength] = '\0';
         
-        _header.bodySize = dataLength;
+        _header.bodySize = dataLength + 1;
         
         //Checksum
         size_t sum = 0;
-        for(size_t i=0; i<dataLength; i++){
+        for(size_t i=0; i<dataLength + 1; i++){
             sum += static_cast<size_t>(_body.body[i]);
         }
         
         _body.checksum = sum;
     }
     
-    char* NodeMessage::getData(){
+    const char* NodeMessage::getData(){
         return _body.body;
     }
     

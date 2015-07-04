@@ -7,7 +7,6 @@ namespace MobNode
 
     NodeServer::NodeServer(asio::io_service& service) : _socket(service, asio::ip::udp::endpoint(asio::ip::udp::v4(), 9001)){
         _startAccept();
-        std::cout << asio::ip::host_name() << std::endl;
     }
     
     NodeServer::~NodeServer(){
@@ -26,16 +25,32 @@ namespace MobNode
         msg.decode(_buffer);
         
         if(msg.isValid()){
-            std::cout << std::string(msg.getData()) << std::endl;
+            switch(msg.getType()){
+                case NODE_PING:
+                    _handleMsgPing(msg);
+                    break;
+                    
+                default:
+                    break;
+            }
         }
         
-        _socket.async_send_to(asio::buffer("hello world"), _senderEndpoint, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+        //_socket.async_send_to(asio::buffer("hello world"), _senderEndpoint, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
             
         _startAccept();
     }
 
     void NodeServer::_handleSend(const boost::system::error_code& err, const size_t bytesSend){
         
+    }
+    
+    
+    void NodeServer::_handleMsgPing(NodeMessage& msg){
+        std::cout << "PING from: " << std::string(msg.getData()) << std::endl;
+        
+        if(std::string(msg.getData()) != std::string(asio::ip::host_name())){
+            _nodeMap[std::string(msg.getData())] = true;
+        }
     }
 
 }

@@ -2,6 +2,7 @@
 #include "NodeClient.h"
 
 int main(int argc, char* argv[]){
+    std::cout << "Starting mobnode on " << asio::ip::host_name() << "..." << std::endl;
     asio::io_service serverService;
     asio::io_service clientService;
     

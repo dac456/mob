@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <utility>
+#include <map>
 
 #include <boost/asio.hpp>
 namespace asio = boost::asio;

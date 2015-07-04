@@ -32,8 +32,10 @@ namespace MobNode
         NodeMessage(MSG_TYPE type);
         ~NodeMessage();
         
-        void setData(char* data, size_t dataLength);
-        char* getData();
+        MSG_TYPE getType();
+        
+        void setData(const char* data, size_t dataLength);
+        const char* getData();
         
         std::pair<char*, size_t> encode();
         void decode(char* buffer);
