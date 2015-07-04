@@ -9,6 +9,7 @@ namespace MobNode
     class NodeServer{
     private:
         //ASIO
+        asio::io_service* _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _senderEndpoint;
         char _buffer[512];

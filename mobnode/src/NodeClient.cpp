@@ -6,16 +6,13 @@ namespace MobNode
     
     NodeClient::NodeClient(asio::io_service& service, std::string addr) : _socket(service){
         asio::ip::udp::resolver resolver(service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, boost::lexical_cast<std::string>(9001));
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, boost::lexical_cast<std::string>(NODE_PORT));
 
         asio::ip::udp::endpoint receiverEndpoint = *resolver.resolve(query);
 
-        //asio::ip::udp::socket sck(service);
         _socket.open(asio::ip::udp::v4());
-        //_socket.async_send_to(asio::buffer("hello server"), receiverEndpoint, boost::bind(&NodeClient::_onSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
         
-        //_socket.async_connect(receiverEndpoint, boost::bind(&NodeClient::onConnect, this, asio::placeholders::error, itr++));
-        //TODO: broadcast and find all nodes on network
+        //Broadcast a NODE_PING message and find all nodes on network
         boost::system::error_code error;
         asio::ip::udp::socket broadSocket(service);
         broadSocket.open(asio::ip::udp::v4(), error);
@@ -30,7 +27,7 @@ namespace MobNode
             
             std::pair<char*, size_t> msgPair = msg.encode();
 
-            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
             broadSocket.send_to(asio::buffer(msgPair.first, msgPair.second), senderEndpoint);
             broadSocket.close(error);
         }
