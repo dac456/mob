@@ -1,4 +1,5 @@
 #include "NodeClient.h"
+#include "NodeMessage.h"
 
 namespace MobNode
 {
@@ -21,9 +22,14 @@ namespace MobNode
         if(!error){
             broadSocket.set_option(asio::ip::udp::socket::reuse_address(true));
             broadSocket.set_option(asio::socket_base::broadcast(true));
+            
+            NodeMessage msg(NODE_PING);
+            msg.setData("hello", 5);
+            
+            std::pair<char*, size_t> msgPair = msg.encode();
 
             asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
-            broadSocket.send_to(asio::buffer("hello broadcast"), senderEndpoint);
+            broadSocket.send_to(asio::buffer(msgPair.first, msgPair.second), senderEndpoint);
             broadSocket.close(error);
         }
         else{

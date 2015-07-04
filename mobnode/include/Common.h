@@ -25,6 +25,7 @@ namespace MobNode
     class NodeConnection;
     class NodeClient;
     class NodeServer;
+    class NodeMessage;
     
     typedef std::shared_ptr<NodeConnection> NodeConnectionPtr;
 }

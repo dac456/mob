@@ -1,11 +1,13 @@
 #include "NodeServer.h"
 #include "NodeConnection.h"
+#include "NodeMessage.h"
 
 namespace MobNode
 {
 
     NodeServer::NodeServer(asio::io_service& service) : _socket(service, asio::ip::udp::endpoint(asio::ip::udp::v4(), 9001)){
         _startAccept();
+        std::cout << asio::ip::host_name() << std::endl;
     }
     
     NodeServer::~NodeServer(){
@@ -18,13 +20,15 @@ namespace MobNode
     }
     
     void NodeServer::_handleReceive(const boost::system::error_code& err, const size_t bytesReceived){
-        //std::cout << err << std::endl;
         if(err) return;
-
-        std::cout << _buffer << std::endl;
         
-        //asio::async_write(session->getSocket(), asio::buffer("hello world"), 
-        //    boost::bind(&NodeConnection::_handleWrite, session, asio::placeholders::error, asio::placeholders::bytes_transferred));
+        NodeMessage msg;
+        msg.decode(_buffer);
+        
+        if(msg.isValid()){
+            std::cout << std::string(msg.getData()) << std::endl;
+        }
+        
         _socket.async_send_to(asio::buffer("hello world"), _senderEndpoint, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
             
         _startAccept();
