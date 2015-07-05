@@ -20,10 +20,10 @@ namespace MobNode
             broadSocket.set_option(asio::ip::udp::socket::reuse_address(true));
             broadSocket.set_option(asio::socket_base::broadcast(true));
             
-            NodeMessage msg(NODE_PING);
+            mob::node_message msg(mob::NODE_PING);
             
             std::string nodeName = asio::ip::host_name();
-            msg.setData(nodeName.c_str(), nodeName.length());
+            msg.set_data(nodeName.c_str(), nodeName.length());
             
             std::pair<char*, size_t> msgPair = msg.encode();
 

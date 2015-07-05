@@ -1,29 +1,29 @@
 #include "NodeMessage.h"
 
-namespace MobNode
+namespace mob
 {
     
-    NodeMessage::NodeMessage(){
+    node_message::node_message(){
         _isValid = false;
     }
     
-    NodeMessage::NodeMessage(MSG_TYPE type){
+    node_message::node_message(MSG_TYPE type){
         _isValid = false;
         _header.msgType = type;
     }
     
-    NodeMessage::~NodeMessage(){
+    node_message::~node_message(){
         if(_body.body != nullptr){
             delete[] _body.body;
             _body.body = nullptr;
         }
     }
     
-    MSG_TYPE NodeMessage::getType(){
+    MSG_TYPE node_message::get_type(){
         return static_cast<MSG_TYPE>(_header.msgType);
     }
     
-    void NodeMessage::setData(const char* data, size_t dataLength){
+    void node_message::set_data(const char* data, size_t dataLength){
         if(_body.body != nullptr){
             delete[] _body.body;
         }
@@ -43,11 +43,11 @@ namespace MobNode
         _body.checksum = sum;
     }
     
-    const char* NodeMessage::getData(){
+    const char* node_message::get_data(){
         return _body.body;
     }
     
-    std::pair<char*, size_t> NodeMessage::encode(){
+    std::pair<char*, size_t> node_message::encode(){
         size_t bufLen = _header.bodySize + 1 + sizeof(size_t)*2;
         char* buf = new char[bufLen];
         
@@ -61,7 +61,7 @@ namespace MobNode
         return std::make_pair(buf, bufLen);
     }
     
-    void NodeMessage::decode(char* buffer){
+    void node_message::decode(char* buffer){
         if(buffer != nullptr){
             //Message type
             _header.msgType = buffer[0];
@@ -103,7 +103,7 @@ namespace MobNode
         }
     }
     
-    bool NodeMessage::isValid(){
+    bool node_message::is_valid(){
         return _isValid;
     }
     

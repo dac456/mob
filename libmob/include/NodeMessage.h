@@ -3,44 +3,45 @@
 
 #include "Common.h"
 
-namespace MobNode
+namespace mob
 {
     
     typedef enum{
-        NODE_PING
+        NODE_PING,          //ping from node
+        NODE_PING_LIB       //ping from libmob
     } MSG_TYPE;
     
-    struct MsgHeader{
+    struct msg_header{
         char msgType;
         size_t bodySize;    
     };
     
-    struct MsgBody{
+    struct msg_body{
         char* body = nullptr; //TODO: correct type?
         size_t checksum;    
     };
     
-    class NodeMessage{
+    class node_message{
     private:
-        MsgHeader _header;
-        MsgBody _body;
+        msg_header _header;
+        msg_body _body;
         
         bool _isValid;
         
     public:
-        NodeMessage();
-        NodeMessage(MSG_TYPE type);
-        ~NodeMessage();
+        node_message();
+        node_message(MSG_TYPE type);
+        ~node_message();
         
-        MSG_TYPE getType();
+        MSG_TYPE get_type();
         
-        void setData(const char* data, size_t dataLength);
-        const char* getData();
+        void set_data(const char* data, size_t dataLength);
+        const char* get_data();
         
         std::pair<char*, size_t> encode();
         void decode(char* buffer);
         
-        bool isValid();
+        bool is_valid();
     };
 
 }

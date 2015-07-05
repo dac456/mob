@@ -2,6 +2,7 @@
 #define __NODESERVER_H
 
 #include "Common.h"
+#include "NodeMessage.h"
 
 namespace MobNode
 {
@@ -26,7 +27,8 @@ namespace MobNode
         void _handleReceive(const boost::system::error_code& err, const size_t bytesReceived);
         void _handleSend(const boost::system::error_code& err, const size_t bytesSent);
         
-        void _handleMsgPing(NodeMessage& msg);
+        void _handleMsgPing(mob::node_message& msg);
+        void _handleMsgPingLib(mob::node_message& msg);
     };
 
 }
