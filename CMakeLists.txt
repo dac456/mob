@@ -39,3 +39,16 @@ target_link_libraries(mobnode
    ${Boost_LIBRARIES}
    mob
 )
+
+# mobtest
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mobtest/include)
+
+file(GLOB_RECURSE TEST_HDR RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS mobtest/include/*.h)
+file(GLOB_RECURSE TEST_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS mobtest/src/*.cpp)
+
+add_executable(mobtest ${TEST_SRC} ${TEST_HDR})
+
+target_link_libraries(mobtest
+   ${Boost_LIBRARIES}
+   mob
+)

@@ -21,12 +21,13 @@ namespace mob
         size_t checksum;    
     };
     
+    //TODO: MOBAPI causes compiler errors here
     class node_message{
     private:
         msg_header _header;
         msg_body _body;
         
-        bool _isValid;
+        bool _is_valid;
         
     public:
         node_message();

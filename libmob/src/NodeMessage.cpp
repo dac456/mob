@@ -4,11 +4,11 @@ namespace mob
 {
     
     node_message::node_message(){
-        _isValid = false;
+        _is_valid = false;
     }
     
     node_message::node_message(MSG_TYPE type){
-        _isValid = false;
+        _is_valid = false;
         _header.msgType = type;
     }
     
@@ -57,7 +57,7 @@ namespace mob
         memcpy(&buf[1 + sizeof(size_t)], _body.body, _header.bodySize);
         memcpy(&buf[1 + sizeof(size_t) + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
         
-        _isValid = true; 
+        _is_valid = true; 
         return std::make_pair(buf, bufLen);
     }
     
@@ -93,18 +93,18 @@ namespace mob
             }
             
             if(checksum == sum){
-                _isValid = true;
+                _is_valid = true;
                 _body.checksum = checksum;
             }
             else{
-                _isValid = false;
+                _is_valid = false;
                 std::cout << "invalid checksum" << std::endl;
             }           
         }
     }
     
     bool node_message::is_valid(){
-        return _isValid;
+        return _is_valid;
     }
     
 }

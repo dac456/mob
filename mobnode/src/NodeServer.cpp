@@ -44,8 +44,8 @@ namespace MobNode
         _startAccept();
     }
 
-    void NodeServer::_handleSend(const boost::system::error_code& err, const size_t bytesSend){
-        
+    void NodeServer::_handleSend(const boost::system::error_code& err, const size_t bytesSent){
+        //std::cout << bytesSent << std::endl;
     }
     
     
@@ -86,7 +86,7 @@ namespace MobNode
         std::pair<char*, size_t> msgPair = msgOut.encode();
         
         asio::ip::udp::resolver res(*_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(msg.get_data()), boost::lexical_cast<std::string>(NODE_PORT));
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(msg.get_data()), boost::lexical_cast<std::string>(9002));
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));        

@@ -11,7 +11,7 @@ namespace mob
         //ASIO
         asio::io_service _service;
         asio::ip::udp::socket _socket;
-        asio::ip::udp::endpoint _senderEndpoint;
+        asio::ip::udp::endpoint _sender_endpoint;
         char _buffer[512];
                 
         //mob
