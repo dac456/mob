@@ -5,6 +5,7 @@
     #define _WIN32_WINNT 0x0501
 #endif
 
+#include <functional>
 #include <memory>
 #include <vector>
 #include <utility>
@@ -43,8 +44,10 @@ namespace asio = boost::asio;
 
 namespace mob
 {
-
+    template<typename T> class gmem;
+    class root;
     class node_message;
+    class task;
 
 }
 

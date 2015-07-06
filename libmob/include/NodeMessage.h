@@ -17,7 +17,7 @@ namespace mob
     };
     
     struct msg_body{
-        char* body = nullptr; //TODO: correct type?
+        char* body = nullptr;
         size_t checksum;    
     };
     

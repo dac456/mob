@@ -12,7 +12,23 @@ namespace mob
         
     }
     
-    void root::mob_init(int argc, char* argv[]){     
+    void root::mob_init(int argc, char* argv[]){
+        int nextParam = 0;
+        for(int i=0; i<argc; i++){
+            if(strstr(argv[i], "--") == nullptr){
+                if(nextParam == 1){
+                    _task_indices.push_back(atoi(argv[i]));
+                }
+            }
+            else{     
+                if(strcmp(argv[i], "--tasklist") == 0){
+                    nextParam = 1;
+                }          
+            }            
+        }
+        
+        //TODO: this should probably happen in moblaunch
+        //      program should assume it's already been started by a node and passed the local hostname     
         boost::system::error_code error;
         asio::ip::udp::socket broad_socket(_service);
         broad_socket.open(asio::ip::udp::v4(), error);
@@ -35,12 +51,23 @@ namespace mob
             std::cout << "broadcast error" << std::endl;
         }
         
+        //Start an async server so we can talk to the network
         _start_accept();
         boost::thread srv(boost::bind(&asio::io_service::run, &_service));
     }
 
     void root::mob_kill(){
         //TODO: shutdown program somehow
+    }
+    
+    std::string root::get_next_node(){
+        for(auto& node : _node_map){
+            if(node.second){
+                return node.first;
+            }
+        }
+        
+        return std::string("null");
     }
     
     
