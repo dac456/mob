@@ -3,6 +3,7 @@
 
 #include "Common.h"
 #include "NodeMessage.h"
+#include "GMem.h"
 
 namespace MobNode
 {
@@ -13,10 +14,11 @@ namespace MobNode
         asio::io_service* _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _senderEndpoint;
-        char _buffer[512];
+        char _buffer[1024];
         
         //Node
         std::map<std::string, bool> _nodeMap;
+        std::map<std::string, std::vector<mob::gmem<void*>>> _prgmMem;
         
     public:
         NodeServer(asio::io_service& service);
@@ -29,6 +31,7 @@ namespace MobNode
         
         void _handleMsgPing(mob::node_message& msg);
         void _handleMsgPingLib(mob::node_message& msg);
+        void _handleMsgPrgmSetMem(mob::node_message& msg);
     };
 
 }

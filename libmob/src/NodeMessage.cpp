@@ -47,6 +47,10 @@ namespace mob
         return _body.body;
     }
     
+    msg_header node_message::get_header(){
+        return _header;
+    }
+    
     std::pair<char*, size_t> node_message::encode(){
         size_t bufLen = _header.bodySize + 1 + sizeof(size_t)*2;
         char* buf = new char[bufLen];
@@ -92,14 +96,14 @@ namespace mob
                 checksum += static_cast<size_t>(buffer[i]) << (i - idx)*8;
             }
             
-            if(checksum == sum){
+            //if(checksum == sum){
                 _is_valid = true;
                 _body.checksum = checksum;
-            }
-            else{
-                _is_valid = false;
-                std::cout << "invalid checksum" << std::endl;
-            }           
+            //}
+            //else{
+            //    _is_valid = false;
+            //    std::cout << "invalid checksum" << std::endl;
+            //}           
         }
     }
     

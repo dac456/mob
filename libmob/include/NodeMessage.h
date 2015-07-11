@@ -1,14 +1,18 @@
 #ifndef __NODEMESSAGE_H
 #define __NODEMESSAGE_H
 
-#include "Common.h"
+#include "MobCommon.h"
 
 namespace mob
 {
     
     typedef enum{
-        NODE_PING,          //ping from node
-        NODE_PING_LIB       //ping from libmob
+        NODE_PING,           //ping from node
+        NODE_PING_LIB,       //ping from libmob
+        NODE_UPDATE_TASKS,   //tasks are reassigned
+        NODE_START_PRGM,     //ask nodes to start a program locally
+        PRGM_GET_MEM,
+        PRGM_SET_MEM
     } MSG_TYPE;
     
     struct msg_header{
@@ -38,6 +42,8 @@ namespace mob
         
         void set_data(const char* data, size_t dataLength);
         const char* get_data();
+        
+        msg_header get_header();
         
         std::pair<char*, size_t> encode();
         void decode(char* buffer);

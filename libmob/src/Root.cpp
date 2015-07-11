@@ -13,6 +13,8 @@ namespace mob
     }
     
     void root::mob_init(int argc, char* argv[]){
+        _prgm_name = "mobtest"; //TODO: get from cmd line
+        
         int nextParam = 0;
         for(int i=0; i<argc; i++){
             if(strstr(argv[i], "--") == nullptr){
@@ -27,9 +29,17 @@ namespace mob
             }            
         }
         
+        //Create shared memory pool
+        try{
+            bip::managed_shared_memory segment(bip::create_only, _prgm_name.c_str(), 65536);
+        }
+        catch(...){
+            bip::shared_memory_object::remove(_prgm_name.c_str());
+        }
+        
         //TODO: this should probably happen in moblaunch
         //      program should assume it's already been started by a node and passed the local hostname     
-        boost::system::error_code error;
+        /*boost::system::error_code error;
         asio::ip::udp::socket broad_socket(_service);
         broad_socket.open(asio::ip::udp::v4(), error);
         if(!error){
@@ -49,7 +59,7 @@ namespace mob
         }
         else{
             std::cout << "broadcast error" << std::endl;
-        }
+        }*/
         
         //Start an async server so we can talk to the network
         _start_accept();
@@ -57,17 +67,12 @@ namespace mob
     }
 
     void root::mob_kill(){
-        //TODO: shutdown program somehow
+        _socket.close();
+        bip::shared_memory_object::remove(_prgm_name.c_str());
     }
     
-    std::string root::get_next_node(){
-        for(auto& node : _node_map){
-            if(node.second){
-                return node.first;
-            }
-        }
-        
-        return std::string("null");
+    std::string root::get_name(){
+        return _prgm_name;
     }
     
     
@@ -85,7 +90,7 @@ namespace mob
         if(msg.is_valid()){
             switch(msg.get_type()){
                 case mob::NODE_PING_LIB:
-                    _handle_node_ping_lib(msg);
+                    //_handle_node_ping_lib(msg);
                     break;
                     
                 default:
@@ -96,9 +101,28 @@ namespace mob
         _start_accept();        
     }
     
-    void root::_handle_node_ping_lib(node_message& msg){
+    /*void root::_handle_node_ping_lib(node_message& msg){
         std::cout << std::string(msg.get_data()) << std::endl;
         _node_map[std::string(msg.get_data())] = true;
+    }*/
+    
+    void root::_prgm_send_mem(node_message& msg){
+        boost::system::error_code error;
+        asio::ip::udp::socket broad_socket(_service);
+        broad_socket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broad_socket.set_option(asio::socket_base::broadcast(true));
+            
+            std::pair<char*, size_t> msg_pair = msg.encode();
+
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+            broad_socket.close(error);
+        }
+        else{
+            std::cout << "broadcast error" << std::endl;
+        }            
     }
     
 }

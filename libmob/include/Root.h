@@ -1,12 +1,12 @@
 #ifndef __ROOT_H
 #define __ROOT_H
 
-#include "Common.h"
+#include "MobCommon.h"
 
 namespace mob
 {
 
-    class MOBAPI root{
+    class /*MOBAPI*/ root{
     private:
         //ASIO
         asio::io_service _service;
@@ -15,7 +15,7 @@ namespace mob
         char _buffer[512];
                 
         //mob
-        std::map<std::string, bool> _node_map; //TODO: needed? nodes are responsible for allocating tasks, not vice versa
+        std::string _prgm_name;
         std::vector<size_t> _task_indices;
         
     public:
@@ -25,15 +25,18 @@ namespace mob
         void mob_init(int argc, char* argv[]);
         void mob_kill();
         
-        std::string get_next_node();
+        std::string get_name();
         
-    private:
+        
+    private:       
         void _start_accept();
         void _handle_receive(const boost::system::error_code& err, const size_t bytesReceived);
         
-        void _handle_node_ping_lib(node_message& msg);
+        //void _handle_node_ping_lib(node_message& msg);
+        void _prgm_send_mem(node_message& msg);
         
         friend class task;
+        template<typename T> friend class gmem; //TODO: breaks export (I think)
     };
 
 }

@@ -1,7 +1,7 @@
 #ifndef __GMALLOC_H
 #define __GMALLOC_H
 
-#include "Common.h"
+#include "MobCommon.h"
 #include "GMem.h"
 
 namespace mob

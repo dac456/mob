@@ -1,5 +1,6 @@
 #include "NodeServer.h"
 #include "NodeConnection.h"
+#include "GMem.h"
 
 namespace MobNode
 {
@@ -32,6 +33,10 @@ namespace MobNode
                     
                 case mob::NODE_PING_LIB:
                     _handleMsgPingLib(msg);
+                    break;
+                    
+                case mob::PRGM_SET_MEM:
+                    _handleMsgPrgmSetMem(msg);
                     break;
                     
                 default:
@@ -90,6 +95,25 @@ namespace MobNode
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));        
+    }
+    
+    void NodeServer::_handleMsgPrgmSetMem(mob::node_message& msg){
+        std::cout << "set_mem" << std::endl;
+        
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        mob::set_mem mem;
+        ia >> mem;
+        
+        bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
+        std::pair<float*, bip::managed_shared_memory::size_type> res;
+        
+        res = segment.find<float>(mem.var_name.c_str());
+        float* val = res.first;
+
+        (*(val+mem.idx)) = atof(mem.val.c_str());
     }
 
 }

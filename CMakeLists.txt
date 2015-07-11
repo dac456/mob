@@ -11,7 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED system filesystem thread)
+find_package(Boost REQUIRED system filesystem thread serialization)
 link_directories(${Boost_LIBRARY_DIRS})
 include_directories(${Boost_INCLUDE_DIR})
 
@@ -25,6 +25,7 @@ add_library(mob SHARED ${LIB_SRC} ${LIB_HDR})
 
 target_link_libraries(mob
    ${Boost_LIBRARIES}
+   rt #TODO: only if linux
 )
 
 # mobnode
