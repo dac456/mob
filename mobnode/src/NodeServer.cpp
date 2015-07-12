@@ -186,11 +186,14 @@ namespace MobNode
         
         proc::child c = proc::launch(mem.prgm_name, args, ctx);
         
-        //TODO: run thread to capture stdout
-        proc::pistream &is = c.get_stdout(); 
-        std::string line; 
-        while (std::getline(is, line)) 
-            std::cout << line << std::endl;         
+        boost::thread output([=](){
+            for(;;){
+                proc::pistream &is = c.get_stdout(); 
+                std::string line; 
+                while (std::getline(is, line)) 
+                    std::cout << line << std::endl;    
+            }         
+        });        
         
         //Store process
         proc_info info;
