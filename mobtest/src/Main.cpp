@@ -34,7 +34,12 @@ int main(int argc, char* argv[])
     
     test.exec(mob);
     
-    for(;;);
+    for(;;){
+        std::cout << "enter 'q' to quit... " << std::endl;
+        if(std::cin.get() == 'q'){
+            break;
+        }
+    }
     
     //mob::gfree(diff);
     

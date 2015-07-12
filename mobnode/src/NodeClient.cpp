@@ -13,6 +13,7 @@ namespace MobNode
         _socket.open(asio::ip::udp::v4());
         
         //Broadcast a NODE_PING message and find all nodes on network
+        //TODO: move to method and broadcast on timer
         boost::system::error_code error;
         asio::ip::udp::socket broadSocket(service);
         broadSocket.open(asio::ip::udp::v4(), error);

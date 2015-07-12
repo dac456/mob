@@ -35,7 +35,6 @@ namespace mob
     template<typename T> 
     class gmem{
     private:
-        //T* _data;
         const size_t _sz;
         
         std::string _name;
@@ -53,14 +52,12 @@ namespace mob
             bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());
             segment.construct<T>(name.c_str())[sz](0);
             
-            //_data = new T[sz];
             _mob_root = &mob_root;
             
             _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1));
         }
         
         ~gmem(){
-            //delete[] _data;
             bip::shared_memory_object::remove(_mem_name.c_str());
         }
         
@@ -112,7 +109,7 @@ namespace mob
         }
         
         void remote_get_notify(size_t task_idx){
-            //assert(_waiting_for_remote.first == task_idx);
+            //If this is the droid we're searching for...
             if(_waiting_for_remote.first == task_idx){
                 _waiting_for_remote.second = false;
             }

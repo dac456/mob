@@ -5,6 +5,7 @@
 namespace mob
 {
     
+    //TODO: program ports should be incremented to allow multiple programs per node
     root::root() : _socket(_service, asio::ip::udp::endpoint(asio::ip::udp::v4(), 9002)){
         
     }
