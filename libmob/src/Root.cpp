@@ -1,5 +1,6 @@
 #include "Root.h"
 #include "NodeMessage.h"
+#include "GMem.h"
 
 namespace mob
 {
@@ -93,6 +94,10 @@ namespace mob
                     //_handle_node_ping_lib(msg);
                     break;
                     
+                case mob::PRGM_GET_MEM:
+                    _handle_prgm_get_mem(msg);
+                    break;
+                    
                 default:
                     break;
             }
@@ -105,6 +110,27 @@ namespace mob
         std::cout << std::string(msg.get_data()) << std::endl;
         _node_map[std::string(msg.get_data())] = true;
     }*/
+    
+    void root::_handle_prgm_get_mem(node_message& msg){
+        std::cout << "_handle_prgm_get_mem" << std::endl;
+        
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        mob::set_mem mem;
+        ia >> mem;
+        
+        bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
+        std::pair<float*, bip::managed_shared_memory::size_type> res;
+        
+        res = segment.find<float>(mem.var_name.c_str());
+        float* val = res.first;
+
+        (*(val+mem.idx)) = atof(mem.val.c_str());     
+        
+        _sig_remote_get(mem.idx);   
+    }
     
     void root::_prgm_send_mem(node_message& msg){
         boost::system::error_code error;
@@ -125,4 +151,28 @@ namespace mob
         }            
     }
     
+    void root::_prgm_get_mem(node_message& msg){
+        boost::system::error_code error;
+        asio::ip::udp::socket broad_socket(_service);
+        broad_socket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broad_socket.set_option(asio::socket_base::broadcast(true));
+            
+            std::pair<char*, size_t> msg_pair = msg.encode();
+
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+            broad_socket.close(error);
+        }
+        else{
+            std::cout << "broadcast error" << std::endl;
+        }           
+    }
+    
+    
+    boost::signals2::connection root::_connect_remote_get(const remote_get_event& e){
+        return _sig_remote_get.connect(e);
+    }
+        
 }

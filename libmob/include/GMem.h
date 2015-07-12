@@ -12,6 +12,7 @@ namespace mob
     //private:
     //    friend class boost::serialization::access;
         
+        std::string node_name;
         std::string prgm_name;
         std::string var_name;
         
@@ -22,9 +23,8 @@ namespace mob
         
         template<typename Archive>
         void serialize(Archive& ar, const unsigned int version){
-            //ar & prgm_name_length;
+            ar & node_name;
             ar & prgm_name;
-            //ar & var_name_length;
             ar & var_name;
             ar & idx;
             ar & val_type;
@@ -42,6 +42,9 @@ namespace mob
         std::string _mem_name;
         root* _mob_root;
         
+        std::pair<size_t, bool> _waiting_for_remote;
+        boost::signals2::connection _remote_get;
+        
     public:
         gmem(std::string name, root& mob_root, const size_t sz) : _sz(sz){
             _name = name;
@@ -52,6 +55,8 @@ namespace mob
             
             //_data = new T[sz];
             _mob_root = &mob_root;
+            
+            _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1));
         }
         
         ~gmem(){
@@ -87,7 +92,7 @@ namespace mob
             return _name;
         }
         
-        const T operator[] (const int idx) const{
+        const T operator[] (const int idx){
             assert(idx >= 0 && idx < _sz);
             
             if(std::find(_mob_root->_task_indices.begin(), _mob_root->_task_indices.end(), idx) != _mob_root->_task_indices.end()){
@@ -100,7 +105,16 @@ namespace mob
                 return (*(mem+idx));
             }
             else{
+                _waiting_for_remote = std::make_pair(idx, true);
+                
                 return _get_mem(_name, idx);
+            }
+        }
+        
+        void remote_get_notify(size_t task_idx){
+            //assert(_waiting_for_remote.first == task_idx);
+            if(_waiting_for_remote.first == task_idx){
+                _waiting_for_remote.second = false;
             }
         }
         
@@ -128,8 +142,33 @@ namespace mob
 
         }
         
-        T _get_mem(std::string var_name, size_t task_idx){
+        const T _get_mem(std::string var_name, size_t task_idx) const{
+            node_message msg(PRGM_GET_MEM);
             
+            set_mem msg_data;
+            msg_data.node_name = asio::ip::host_name();
+            msg_data.prgm_name = _mob_root->get_name();
+            msg_data.var_name = var_name;
+            msg_data.idx = task_idx;
+            msg_data.val_type = std::string(typeid(T).name());
+              
+            std::stringstream msg_stream;
+            boost::archive::text_oarchive oa(msg_stream);
+            oa << msg_data;
+            
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            
+            _mob_root->_prgm_get_mem(msg);
+            while(_waiting_for_remote.second); //TODO: timeout and detect bad node
+            
+            std::cout << "got mem" << std::endl;
+            bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
+            std::pair<T*, bip::managed_shared_memory::size_type> res;
+            
+            res = segment.find<T>(_name.c_str());
+            T* mem = res.first;
+            
+            return (*(mem+task_idx));                          
         }
         
     };

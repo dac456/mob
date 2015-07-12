@@ -23,6 +23,7 @@ namespace bip = boost::interprocess;
 
 #include <boost/any.hpp>
 #include <boost/bind.hpp>
+#include <boost/signals2.hpp>
 #include <boost/thread.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/lexical_cast.hpp>

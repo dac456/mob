@@ -33,6 +33,10 @@ int main(int argc, char* argv[])
         }
         std::cout << c[global_index] << std::endl;
         
+        if(global_index + 1 < 4){
+            std::cout << c[global_index + 1] << std::endl;
+        }        
+        
     });
     
     test.exec(mob);

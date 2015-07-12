@@ -39,6 +39,10 @@ namespace MobNode
                     _handleMsgPrgmSetMem(msg);
                     break;
                     
+                case mob::PRGM_GET_MEM:
+                    _handleMsgPrgmGetMem(msg);
+                    break;
+                    
                 default:
                     break;
             }
@@ -114,6 +118,40 @@ namespace MobNode
         float* val = res.first;
 
         (*(val+mem.idx)) = atof(mem.val.c_str());
+    }
+    
+    void NodeServer::_handleMsgPrgmGetMem(mob::node_message& msg){
+        std::cout << "get_mem" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        mob::set_mem mem;
+        ia >> mem;
+        
+        //Find memory in shared pool
+        bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
+        std::pair<float*, bip::managed_shared_memory::size_type> res;
+        
+        res = segment.find<float>(mem.var_name.c_str());
+        float* val = res.first; 
+        
+        //Send back
+        mob::node_message msgOut(mob::PRGM_GET_MEM);
+        std::string nodeName = asio::ip::host_name();
+        
+        mem.val = (*(val+mem.idx));
+        
+        msgOut.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+        std::pair<char*, size_t> msgPair = msgOut.encode();
+        
+        asio::ip::udp::resolver resolver(*_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(mem.node_name), boost::lexical_cast<std::string>(9002));
+        asio::ip::udp::endpoint ep = *resolver.resolve(query);
+        
+        _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
     }
 
 }

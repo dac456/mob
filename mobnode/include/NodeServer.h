@@ -32,6 +32,7 @@ namespace MobNode
         void _handleMsgPing(mob::node_message& msg);
         void _handleMsgPingLib(mob::node_message& msg);
         void _handleMsgPrgmSetMem(mob::node_message& msg);
+        void _handleMsgPrgmGetMem(mob::node_message& msg);
     };
 
 }

@@ -18,6 +18,8 @@ namespace mob
         std::string _prgm_name;
         std::vector<size_t> _task_indices;
         
+        boost::signals2::signal<void(size_t)> _sig_remote_get;
+        
     public:
         root();
         ~root();
@@ -33,7 +35,13 @@ namespace mob
         void _handle_receive(const boost::system::error_code& err, const size_t bytesReceived);
         
         //void _handle_node_ping_lib(node_message& msg);
+        void _handle_prgm_get_mem(node_message& msg);
+        
         void _prgm_send_mem(node_message& msg);
+        void _prgm_get_mem(node_message& msg);
+        
+        typedef boost::signals2::signal<void(size_t)>::slot_type remote_get_event;
+        boost::signals2::connection _connect_remote_get(const remote_get_event& e);
         
         friend class task;
         template<typename T> friend class gmem; //TODO: breaks export (I think)
