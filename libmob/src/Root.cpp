@@ -111,9 +111,9 @@ namespace mob
         _node_map[std::string(msg.get_data())] = true;
     }*/
     
+    //Get data requested from remote node and update local shared memory
     void root::_handle_prgm_get_mem(node_message& msg){
-        std::cout << "_handle_prgm_get_mem" << std::endl;
-        
+        //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
         
@@ -121,6 +121,7 @@ namespace mob
         mob::set_mem mem;
         ia >> mem;
         
+        //Set shared local memory
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
         std::pair<float*, bip::managed_shared_memory::size_type> res;
         
@@ -129,6 +130,7 @@ namespace mob
 
         (*(val+mem.idx)) = atof(mem.val.c_str());     
         
+        //Signal gmem that the data is updated
         _sig_remote_get(mem.idx);   
     }
     

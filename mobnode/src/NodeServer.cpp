@@ -102,8 +102,7 @@ namespace MobNode
     }
     
     void NodeServer::_handleMsgPrgmSetMem(mob::node_message& msg){
-        std::cout << "set_mem" << std::endl;
-        
+        //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
         
@@ -111,6 +110,7 @@ namespace MobNode
         mob::set_mem mem;
         ia >> mem;
         
+        //Find memory in shared pool and set
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
         std::pair<float*, bip::managed_shared_memory::size_type> res;
         
@@ -121,8 +121,6 @@ namespace MobNode
     }
     
     void NodeServer::_handleMsgPrgmGetMem(mob::node_message& msg){
-        std::cout << "get_mem" << std::endl;
-        
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -138,13 +136,21 @@ namespace MobNode
         res = segment.find<float>(mem.var_name.c_str());
         float* val = res.first; 
         
+        //mem.val = (*(val+mem.idx));
+        std::stringstream val_str;
+        val_str << (*(val+mem.idx));
+        mem.val = val_str.str();   
+        
+        //Re-serialize data
+        std::stringstream msg_stream_out;
+        boost::archive::text_oarchive oa(msg_stream_out);
+        oa << mem;        
+        
         //Send back
         mob::node_message msgOut(mob::PRGM_GET_MEM);
-        std::string nodeName = asio::ip::host_name();
+        std::string nodeName = asio::ip::host_name();        
         
-        mem.val = (*(val+mem.idx));
-        
-        msgOut.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+        msgOut.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
         std::pair<char*, size_t> msgPair = msgOut.encode();
         
         asio::ip::udp::resolver resolver(*_service);

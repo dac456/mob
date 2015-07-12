@@ -161,7 +161,6 @@ namespace mob
             _mob_root->_prgm_get_mem(msg);
             while(_waiting_for_remote.second); //TODO: timeout and detect bad node
             
-            std::cout << "got mem" << std::endl;
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
             std::pair<T*, bip::managed_shared_memory::size_type> res;
             
