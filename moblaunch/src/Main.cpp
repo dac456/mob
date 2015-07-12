@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     }
     
     //Start program
-    mob::node_message msgOut(mob::NODE_START_PRGM);
+    mob::node_message msgOut(mob::LAUNCH_PRGM);
     
     prgm_data data;
     data.prgm_name = prgmName;

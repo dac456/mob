@@ -49,6 +49,7 @@ namespace mob
             _name = name;
             
             //Create shared region
+            std::cout << "gmem debug : " << mob_root.get_name() << std::endl;
             bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());
             segment.construct<T>(name.c_str())[sz](0);
             

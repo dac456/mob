@@ -14,6 +14,17 @@ namespace MobNode
         
     }
     
+    void NodeServer::_launchProcess(std::string path, std::vector<std::string> args, proc::context ctx){
+        proc::child c = proc::launch(path, args, ctx);
+        
+        for(;;){
+            proc::pistream &is = c.get_stdout(); 
+            std::string line; 
+            while (std::getline(is, line)) 
+                std::cout << line << std::endl;    
+        }          
+    }
+    
     void NodeServer::_startAccept(){
         //NodeConnectionPtr session = std::make_shared<NodeConnection>(_acc.get_io_service());
         _socket.async_receive_from(asio::buffer(_buffer), _senderEndpoint, boost::bind(&NodeServer::_handleReceive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
@@ -43,8 +54,16 @@ namespace MobNode
                     _handleMsgPrgmGetMem(msg);
                     break;
                     
+                case mob::LAUNCH_PRGM:
+                    _handleMsgLaunchPrgm(msg);
+                    break;
+                    
                 case mob::NODE_START_PRGM:
                     _handleMsgStartPrgm(msg);
+                    break;
+                    
+                case mob::NODE_SET_TASKS:
+                    _handleMsgSetTasks(msg);
                     break;
                     
                 default:
@@ -71,8 +90,6 @@ namespace MobNode
                 storedPrev = true;
             }
             
-            _nodeMap[std::string(msg.get_data())] = true;
-            
             if(!storedPrev){
                 //We haven't heard from this node before, send a ping back
                 
@@ -89,6 +106,8 @@ namespace MobNode
                 _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
             }
         }
+        
+        _nodeMap[std::string(msg.get_data())] = true;        
     }
     
     void NodeServer::_handleMsgPingLib(mob::node_message& msg){
@@ -164,6 +183,126 @@ namespace MobNode
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
     }
     
+    void NodeServer::_handleMsgLaunchPrgm(mob::node_message& msg){
+        std::cout << "launch_prgm" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        prgm_data mem;
+        ia >> mem;
+        
+        std::cout << "launch_prgm: " << mem.prgm_name << std::endl;
+        if(_programMap.find(mem.prgm_name) == _programMap.end()){
+            //Start named process
+            std::vector<std::string> args;
+            args.push_back(mem.prgm_name); 
+            args.push_back("--numtasks");
+            args.push_back(std::to_string(mem.num_tasks));
+            
+            proc::context ctx; 
+            ctx.stdout_behavior = proc::capture_stream();         
+            
+            std::cout << "launch prgm: starting proc" << std::endl;
+            std::stringstream path;
+            path /*<< "./"*/ << mem.prgm_name;
+            //proc::child c = proc::launch(path.str(), args, ctx);
+            
+            /*proc::status s = c.wait();
+            if(s.exited()){
+                std::cout << "err" << std::endl;
+            }*/
+            
+            boost::thread newproc(boost::bind(&NodeServer::_launchProcess, this, path.str(), args, ctx));        
+            
+            //Store process
+            proc_info info;
+            //info.process = &c;
+            info.num_tasks = mem.num_tasks;
+            info.name = mem.prgm_name;   
+            info.running = true;
+            
+            _programMap[mem.prgm_name] = info;
+            
+            //TODO:
+            // determine how many available nodes we have, start program on others, and divides tasks evenly
+            // node_set_tasks(prgm,tasks) -> prgm_set_tasks
+            
+            //Broadcast program start
+            //TODO: possibly iterate over all nodes for p2p transfer instead?
+            boost::system::error_code error;
+            asio::ip::udp::socket broad_socket(*_service);
+            broad_socket.open(asio::ip::udp::v4(), error);
+            if(!error){
+                broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+                broad_socket.set_option(asio::socket_base::broadcast(true));
+                
+                mob::node_message msgOut(mob::NODE_START_PRGM);
+                
+                prgm_data data;
+                data.prgm_name = mem.prgm_name;
+                data.num_tasks = mem.num_tasks;
+                
+                std::stringstream dataStream;
+                boost::archive::text_oarchive oa(dataStream);
+                oa << data;
+                
+                msgOut.set_data(dataStream.str().c_str(), dataStream.str().size());
+        
+                std::pair<char*, size_t> msg_pair = msgOut.encode();
+        
+                asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+                broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+                broad_socket.close(error);
+            }
+            else{
+                std::cout << "broadcast error" << std::endl;
+            }
+            
+            //Initial task assignment
+            size_t nodeCount = _nodeMap.size();
+            std::vector<size_t> taskAssign[nodeCount];
+            
+            size_t blockSize = floor(nodeCount/mem.num_tasks);
+            
+            for(size_t i=0; i<nodeCount; i++){
+                
+                size_t start = i*blockSize;
+                for(size_t j=start; j<start+blockSize; j++){
+                    taskAssign[i].push_back(j);
+                }
+            }
+            
+            //Set tasks for each node
+            size_t nodeIdx = 0;
+            for(auto& node : _nodeMap){
+                std::cout << "set task for " << node.first << std::endl;
+                mob::node_message msgOut(mob::NODE_SET_TASKS);
+                
+                node_task_data msgData;
+                msgData.prgm_name = mem.prgm_name;
+                msgData.task_list = taskAssign[nodeIdx];
+                
+                std::stringstream msgStream;
+                boost::archive::text_oarchive oa(msgStream);
+                oa << msgData;                
+
+                msgOut.set_data(msgStream.str().c_str(), msgStream.str().size());
+                std::pair<char*, size_t> msgPair = msgOut.encode();
+                
+                asio::ip::udp::resolver resolver(*_service);
+                asio::ip::udp::resolver::query query(asio::ip::udp::v4(), node.first, boost::lexical_cast<std::string>(9001));
+                asio::ip::udp::endpoint ep = *resolver.resolve(query);
+                
+                _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                  
+            
+                nodeIdx++;
+            }
+        }        
+    }
+    
     void NodeServer::_handleMsgStartPrgm(mob::node_message& msg){
         std::cout << "start_prgm" << std::endl;
         
@@ -175,38 +314,49 @@ namespace MobNode
         prgm_data mem;
         ia >> mem;
         
-        //Start named process
-        std::vector<std::string> args;
-        args.push_back(mem.prgm_name); 
-        args.push_back("--numtasks");
-        args.push_back(std::to_string(mem.num_tasks));
-        
-        proc::context ctx; 
-        ctx.stdout_behavior = proc::capture_stream();         
-        
-        proc::child c = proc::launch(mem.prgm_name, args, ctx);
-        
-        boost::thread output([=](){
-            for(;;){
-                proc::pistream &is = c.get_stdout(); 
-                std::string line; 
-                while (std::getline(is, line)) 
-                    std::cout << line << std::endl;    
-            }         
-        });        
-        
-        //Store process
-        proc_info info;
-        info.process = &c;
-        info.num_tasks = mem.num_tasks;
-        info.name = mem.prgm_name;   
-        info.running = true;
-        
-        _programMap[mem.prgm_name] = info;
-        
-        //TODO:
-        // determine how many available nodes we have, start program on others, and divides tasks evenly
-        // node_set_tasks(prgm,tasks) -> prgm_set_tasks
+        if(_programMap.find(mem.prgm_name) == _programMap.end() || _programMap.at(mem.prgm_name).running == false){
+            //Start named process
+            std::vector<std::string> args;
+            args.push_back(mem.prgm_name); 
+            args.push_back("--numtasks");
+            args.push_back(std::to_string(mem.num_tasks));
+            
+            proc::context ctx; 
+            ctx.stdout_behavior = proc::capture_stream();         
+            
+            std::stringstream path;
+            path /*<< "./"*/ << mem.prgm_name;
+            //proc::child c = proc::launch(path.str(), args, ctx);
+            
+            /*proc::status s = c.wait();
+            if(s.exited()){
+                std::cout << "err" << std::endl;
+            }*/
+            
+            /*boost::thread output([&](){
+                proc::child c = proc::launch(path.str(), args, ctx);
+                for(;;){
+                    proc::pistream &is = c.get_stdout(); 
+                    std::string line; 
+                    while (std::getline(is, line)) 
+                        std::cout << line << std::endl;    
+                }
+            });*/
+            boost::thread newproc(boost::bind(&NodeServer::_launchProcess, this, path.str(), args, ctx));      
+            
+            //Store process
+            proc_info info;
+            //info.process = &c;
+            info.num_tasks = mem.num_tasks;
+            info.name = mem.prgm_name;   
+            info.running = true;
+            
+            _programMap[mem.prgm_name] = info;
+        }        
+    }    
+    
+    void NodeServer::_handleMsgSetTasks(mob::node_message& msg){
+        std::cout << "set_tasks" << std::endl;
     }
 
 }

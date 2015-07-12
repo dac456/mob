@@ -16,6 +16,7 @@ namespace mob
     
     void root::mob_init(int argc, char* argv[]){
         _prgm_name = argv[0];
+        std::cout << _prgm_name << std::endl;
         
         int nextParam = 0;
         for(int i=0; i<argc; i++){
@@ -41,7 +42,7 @@ namespace mob
             bip::managed_shared_memory segment(bip::create_only, _prgm_name.c_str(), 65536);
         }
         catch(...){
-            bip::shared_memory_object::remove(_prgm_name.c_str());
+            //bip::shared_memory_object::remove(_prgm_name.c_str());
         }
         
         //Start an async server so we can talk to the network

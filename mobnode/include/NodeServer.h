@@ -13,7 +13,7 @@ namespace MobNode
         std::string name;
         size_t num_tasks;
         std::vector<size_t> task_indices; //indices assigned to this node
-        bool running;
+        bool running = false;
     };
     
     struct prgm_data{
@@ -25,6 +25,17 @@ namespace MobNode
             ar & prgm_name;
             ar & num_tasks;
         }        
+    };
+    
+    struct node_task_data{
+        std::string prgm_name;
+        std::vector<size_t> task_list;
+        
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned int version){
+            ar & prgm_name;
+            ar & task_list;
+        }
     };    
 
     class NodeServer{
@@ -44,6 +55,8 @@ namespace MobNode
         ~NodeServer();
         
     private:
+        void _launchProcess(std::string path, std::vector<std::string> args, proc::context ctx);
+        
         void _startAccept();
         void _handleReceive(const boost::system::error_code& err, const size_t bytesReceived);
         void _handleSend(const boost::system::error_code& err, const size_t bytesSent);
@@ -52,7 +65,9 @@ namespace MobNode
         void _handleMsgPingLib(mob::node_message& msg);
         void _handleMsgPrgmSetMem(mob::node_message& msg);
         void _handleMsgPrgmGetMem(mob::node_message& msg);
+        void _handleMsgLaunchPrgm(mob::node_message& msg);
         void _handleMsgStartPrgm(mob::node_message& msg);
+        void _handleMsgSetTasks(mob::node_message& msg);
     };
 
 }

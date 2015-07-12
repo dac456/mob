@@ -10,10 +10,12 @@ namespace mob
         NODE_PING,           //ping from node
         NODE_PING_LIB,       //ping from libmob
         NODE_UPDATE_TASKS,   //tasks are reassigned
+        LAUNCH_PRGM,         //initial program start
         NODE_START_PRGM,     //ask node to start a program locally
+        NODE_SET_TASKS,      //set task list for a program on a node
+        PRGM_SET_TASKS,      //set task list in a program from a node
         PRGM_GET_MEM,        //program requests remote data
         PRGM_SET_MEM,        //program sets remote data
-        PRGM_SET_TASKS       //program sets tasks to execute (?)
     } MSG_TYPE;
     
     struct msg_header{
