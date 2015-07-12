@@ -203,6 +203,7 @@ namespace MobNode
         
         //TODO:
         // determine how many available nodes we have, start program on others, and divides tasks evenly
+        // node_set_tasks(prgm,tasks) -> prgm_set_tasks
     }
 
 }
