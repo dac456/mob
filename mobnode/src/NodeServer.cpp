@@ -43,6 +43,10 @@ namespace MobNode
                     _handleMsgPrgmGetMem(msg);
                     break;
                     
+                case mob::NODE_START_PRGM:
+                    _handleMsgStartPrgm(msg);
+                    break;
+                    
                 default:
                     break;
             }
@@ -95,7 +99,7 @@ namespace MobNode
         std::pair<char*, size_t> msgPair = msgOut.encode();
         
         asio::ip::udp::resolver res(*_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(msg.get_data()), boost::lexical_cast<std::string>(9002));
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(msg.get_data()), boost::lexical_cast<std::string>(9003));
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));        
@@ -158,6 +162,47 @@ namespace MobNode
         asio::ip::udp::endpoint ep = *resolver.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
+    }
+    
+    void NodeServer::_handleMsgStartPrgm(mob::node_message& msg){
+        std::cout << "start_prgm" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        prgm_data mem;
+        ia >> mem;
+        
+        //Start named process
+        std::vector<std::string> args;
+        args.push_back(mem.prgm_name); 
+        args.push_back("--numtasks");
+        args.push_back(std::to_string(mem.num_tasks));
+        
+        proc::context ctx; 
+        ctx.stdout_behavior = proc::capture_stream();         
+        
+        proc::child c = proc::launch(mem.prgm_name, args, ctx);
+        
+        //TODO: run thread to capture stdout
+        proc::pistream &is = c.get_stdout(); 
+        std::string line; 
+        while (std::getline(is, line)) 
+            std::cout << line << std::endl;         
+        
+        //Store process
+        proc_info info;
+        info.process = &c;
+        info.num_tasks = mem.num_tasks;
+        info.name = mem.prgm_name;   
+        info.running = true;
+        
+        _programMap[mem.prgm_name] = info;
+        
+        //TODO:
+        // determine how many available nodes we have, start program on others, and divides tasks evenly
     }
 
 }

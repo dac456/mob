@@ -1,5 +1,5 @@
-#ifndef __COMMON_H
-#define __COMMON_H
+#ifndef __MOBCOMMON_H
+#define __MOBCOMMON_H
 
 #if defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
     #define _WIN32_WINNT 0x0501

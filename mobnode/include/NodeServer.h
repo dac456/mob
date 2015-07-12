@@ -7,6 +7,25 @@
 
 namespace MobNode
 {
+    
+    struct proc_info{
+        proc::child* process;
+        std::string name;
+        size_t num_tasks;
+        std::vector<size_t> task_indices; //indices assigned to this node
+        bool running;
+    };
+    
+    struct prgm_data{
+        std::string prgm_name;
+        size_t num_tasks;
+        
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned int version){
+            ar & prgm_name;
+            ar & num_tasks;
+        }        
+    };    
 
     class NodeServer{
     private:
@@ -18,7 +37,7 @@ namespace MobNode
         
         //Node
         std::map<std::string, bool> _nodeMap;
-        std::map<std::string, std::vector<mob::gmem<void*>>> _prgmMem;
+        std::map<std::string, proc_info> _programMap;
         
     public:
         NodeServer(asio::io_service& service);
@@ -33,6 +52,7 @@ namespace MobNode
         void _handleMsgPingLib(mob::node_message& msg);
         void _handleMsgPrgmSetMem(mob::node_message& msg);
         void _handleMsgPrgmGetMem(mob::node_message& msg);
+        void _handleMsgStartPrgm(mob::node_message& msg);
     };
 
 }

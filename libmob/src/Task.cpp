@@ -13,8 +13,9 @@ namespace mob
     }
 
     void task::exec(root& mob_root){
+        while(mob_root._task_indices.empty());
+        
         for(auto idx : mob_root._task_indices){
-            std::cout << idx << std::endl;
             boost::thread t(_task, idx);
             //_task(idx);
         }

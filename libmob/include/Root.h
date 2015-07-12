@@ -17,6 +17,7 @@ namespace mob
         //mob
         std::string _prgm_name;
         std::vector<size_t> _task_indices;
+        bool _waiting_for_tasks;
         
         boost::signals2::signal<void(size_t)> _sig_remote_get;
         
@@ -28,6 +29,7 @@ namespace mob
         void mob_kill();
         
         std::string get_name();
+        bool is_waiting_for_tasks();
         
         
     private:       

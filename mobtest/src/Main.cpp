@@ -5,6 +5,8 @@
 int main(int argc, char* argv[])
 {
 
+    std::cout << "starting mobtest..." << std::endl;
+
     mob::root mob;
     mob.mob_init(argc, argv);
     
@@ -43,6 +45,7 @@ int main(int argc, char* argv[])
     
     //mob::gfree(diff);
     
+    std::cout << "killing mobtest..." << std::endl;
     mob.mob_kill();
 
     return 0;

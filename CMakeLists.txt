@@ -7,6 +7,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
 add_definitions( -DMOBAPI_EXPORT )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common/)
+
 # Boost
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
@@ -50,6 +52,19 @@ file(GLOB_RECURSE TEST_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS 
 add_executable(mobtest ${TEST_SRC} ${TEST_HDR})
 
 target_link_libraries(mobtest
+   ${Boost_LIBRARIES}
+   mob
+)
+
+# moblaunch
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/moblaunch/include)
+
+file(GLOB_RECURSE LAUNCH_HDR RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS moblaunch/include/*.h)
+file(GLOB_RECURSE LAUNCH_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS moblaunch/src/*.cpp)
+
+add_executable(moblaunch ${LAUNCH_SRC} ${LAUNCH_HDR})
+
+target_link_libraries(moblaunch
    ${Boost_LIBRARIES}
    mob
 )
