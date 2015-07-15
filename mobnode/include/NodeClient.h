@@ -1,7 +1,7 @@
 #ifndef __NODECLIENT_H
 #define __NODECLIENT_H
 
-#include "Common.h"
+#include "NodeCommon.h"
 
 namespace MobNode
 {

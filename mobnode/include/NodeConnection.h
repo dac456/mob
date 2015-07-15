@@ -1,7 +1,7 @@
 #ifndef __NODECONNECTION_H
 #define __NODECONNECTION_H
 
-#include "Common.h"
+#include "NodeCommon.h"
 
 namespace MobNode
 {

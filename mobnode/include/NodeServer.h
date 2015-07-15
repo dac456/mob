@@ -1,7 +1,7 @@
 #ifndef __NODESERVER_H
 #define __NODESERVER_H
 
-#include "Common.h"
+#include "NodeCommon.h"
 #include "NodeMessage.h"
 #include "GMem.h"
 
@@ -51,7 +51,7 @@ namespace MobNode
             ar & prgm_name;
             ar & status;
         }
-    };      
+    };   
 
     class NodeServer{
     private:

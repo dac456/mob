@@ -385,7 +385,7 @@ namespace MobNode
         
         //Bounce the tasks to the correct program on each node
         boost::thread sendTasks([=](){
-            size_t nodeIdx = 0;
+            /*size_t nodeIdx = 0;
             for(auto& node : _nodeMap){
                 if(node.second){
                     while(!_programMap[data.prgm_name].running_on_node.at(node.first)); //block until running
@@ -409,6 +409,17 @@ namespace MobNode
                         nodeIdx++;
                     }
                 }
+            }*/
+            //TODO: this could also be accomplished with a shared flag
+            while(!_programMap[data.prgm_name].running_on_node.at(asio::ip::host_name())); //block until running
+            bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());      
+            TaskList* mem = segment.find_or_construct<TaskList>("task_list")(segment.get_segment_manager());
+            
+            mem->clear();
+            std::cout << "task list size " << data.task_list.size() << std::endl;
+            for(size_t i=0; i<data.task_list.size(); i++){
+                std::cout << i << std::endl;
+                mem->push_back(data.task_list[i]);
             }
         });
     }

@@ -1,36 +1,7 @@
 #ifndef __MOBCOMMON_H
 #define __MOBCOMMON_H
 
-#if defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
-    #define _WIN32_WINNT 0x0501
-#endif
-
-#include <functional>
-#include <memory>
-#include <vector>
-#include <utility>
-#include <map>
-
-#include <boost/asio.hpp>
-namespace asio = boost::asio;
-
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/managed_shared_memory.hpp>
-namespace bip = boost::interprocess;
-
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/serialization/vector.hpp>
-
-#include <boost/any.hpp>
-#include <boost/bind.hpp>
-#include <boost/signals2.hpp>
-#include <boost/thread.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/lexical_cast.hpp>
-
-#define NODE_PORT 9001
+#include "Common.h"
 
 
 #if defined(__WIN32__) || defined(_WIN32) || defined(WIN32)

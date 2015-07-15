@@ -34,16 +34,7 @@ namespace proc = boost::process;
 
 #define NODE_PORT 9001
 
-namespace MobNode
-{
-    
-    typedef std::shared_ptr<asio::ip::tcp::socket> SocketPtr;
-    
-    class NodeConnection;
-    class NodeClient;
-    class NodeServer;
-    
-    typedef std::shared_ptr<NodeConnection> NodeConnectionPtr;
-}
+typedef bip::allocator<size_t, bip::managed_shared_memory::segment_manager> ShmemAllocator;
+typedef std::vector<size_t, ShmemAllocator> TaskList;   
 
 #endif

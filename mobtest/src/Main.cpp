@@ -31,7 +31,11 @@ int main(int argc, char* argv[])
     mob::task test([&a, &b, &c](size_t global_index){
         
         c.set(global_index, a[global_index] + b[global_index]);
-        std::cout << c[global_index] << std::endl;        
+        //std::cout << c[global_index] << std::endl;   
+        std::ofstream fout;
+        fout.open("/home/dcook/out.txt", std::ios::app);
+        fout << c[global_index] << std::endl;
+        fout.close();     
         
     });
     
