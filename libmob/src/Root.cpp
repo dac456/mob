@@ -38,12 +38,44 @@ namespace mob
         }
         
         //Create shared memory pool
+        bip::shared_memory_object::remove(_prgm_name.c_str()); //Clear anything left from previous execution
+        
         try{
-            bip::managed_shared_memory segment(bip::create_only, _prgm_name.c_str(), 65536);
+            bip::managed_shared_memory segment(bip::open_or_create, _prgm_name.c_str(), 65536);
         }
         catch(...){
-            //bip::shared_memory_object::remove(_prgm_name.c_str());
+            bip::shared_memory_object::remove(_prgm_name.c_str());
         }
+        
+        //Broadcast that the program has started on the local node
+        boost::system::error_code error;
+        asio::ip::udp::socket broad_socket(_service);
+        broad_socket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broad_socket.set_option(asio::socket_base::broadcast(true));
+            
+            node_message msg(PRGM_STARTED);
+            
+            prgm_started_data data;
+            data.node_name = asio::ip::host_name();
+            data.prgm_name = _prgm_name;
+            data.status = true;
+            
+            std::stringstream msg_stream;
+            boost::archive::text_oarchive oa(msg_stream);
+            oa << data;
+                        
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            std::pair<char*, size_t> msg_pair = msg.encode();
+            
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+            broad_socket.close(error);
+        }
+        else{
+            std::cout << "broadcast error" << std::endl;
+        }          
         
         //Start an async server so we can talk to the network
         _start_accept();
@@ -72,17 +104,21 @@ namespace mob
 
         if(err) return;
         
-        mob::node_message msg;
+        node_message msg;
         msg.decode(_buffer);
         
         if(msg.is_valid()){
             switch(msg.get_type()){
-                case mob::NODE_PING_LIB:
+                case NODE_PING_LIB:
                     //_handle_node_ping_lib(msg);
                     break;
                     
-                case mob::PRGM_GET_MEM:
+                case PRGM_GET_MEM:
                     _handle_prgm_get_mem(msg);
+                    break;
+                    
+                case PRGM_SET_TASKS:
+                    _handle_prgm_set_tasks(msg);
                     break;
                     
                 default:
@@ -119,6 +155,26 @@ namespace mob
         
         //Signal gmem that the data is updated
         _sig_remote_get(mem.idx);   
+    }
+    
+    void root::_handle_prgm_set_tasks(node_message& msg){
+        std::cout << "root set tasks" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        node_task_data data;
+        ia >> data;    
+        
+        //Set tasks
+        _task_indices.clear();
+        if(_prgm_name == data.prgm_name){
+            for(size_t i=0; i<data.task_list.size(); i++){
+                _task_indices.push_back(data.task_list[i]);
+            }
+        }    
     }
     
     void root::_prgm_send_mem(node_message& msg){
@@ -158,7 +214,7 @@ namespace mob
             std::cout << "broadcast error" << std::endl;
         }           
     }
-    
+
     
     boost::signals2::connection root::_connect_remote_get(const remote_get_event& e){
         return _sig_remote_get.connect(e);

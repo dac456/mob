@@ -16,6 +16,7 @@ namespace mob
         PRGM_SET_TASKS,      //set task list in a program from a node
         PRGM_GET_MEM,        //program requests remote data
         PRGM_SET_MEM,        //program sets remote data
+        PRGM_STARTED,        //notify that the program has started running locally
     } MSG_TYPE;
     
     struct msg_header{

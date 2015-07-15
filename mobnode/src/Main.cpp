@@ -8,7 +8,9 @@ int main(int argc, char* argv[]){
     asio::io_service clientService;
     
     std::shared_ptr<MobNode::NodeServer> server = std::make_shared<MobNode::NodeServer>(serverService);
-    boost::thread srv(boost::bind(&asio::io_service::run, &serverService));
+    for(size_t i=0; i<10; i++){
+        boost::thread srv(boost::bind(&asio::io_service::run, &serverService));
+    }
     
     //TODO: create for each node we want to talk to?
     //      or have on Client wrap all outgoing comm. ?

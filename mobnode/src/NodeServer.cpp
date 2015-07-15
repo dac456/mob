@@ -65,6 +65,10 @@ namespace MobNode
                 case mob::NODE_SET_TASKS:
                     _handleMsgSetTasks(msg);
                     break;
+                
+                case mob::PRGM_STARTED:
+                    _handleMsgPrgmStarted(msg);
+                    break;
                     
                 default:
                     break;
@@ -221,8 +225,12 @@ namespace MobNode
             proc_info info;
             //info.process = &c;
             info.num_tasks = mem.num_tasks;
-            info.name = mem.prgm_name;   
-            info.running = true;
+            info.name = mem.prgm_name;
+            info.started = true;
+            
+            for(auto& node : _nodeMap){
+                info.running_on_node[node.first] = false;
+            }   
             
             _programMap[mem.prgm_name] = info;
             
@@ -265,8 +273,9 @@ namespace MobNode
             size_t nodeCount = _nodeMap.size();
             std::vector<size_t> taskAssign[nodeCount];
             
-            size_t blockSize = floor(nodeCount/mem.num_tasks);
+            size_t blockSize = floor((float)(mem.num_tasks)/(float)(nodeCount));
             
+            //TODO: check for odd number of tasks
             for(size_t i=0; i<nodeCount; i++){
                 
                 size_t start = i*blockSize;
@@ -314,7 +323,7 @@ namespace MobNode
         prgm_data mem;
         ia >> mem;
         
-        if(_programMap.find(mem.prgm_name) == _programMap.end() || _programMap.at(mem.prgm_name).running == false){
+        if(_programMap.find(mem.prgm_name) == _programMap.end() || _programMap.at(mem.prgm_name).started == false){
             //Start named process
             std::vector<std::string> args;
             args.push_back(mem.prgm_name); 
@@ -348,8 +357,12 @@ namespace MobNode
             proc_info info;
             //info.process = &c;
             info.num_tasks = mem.num_tasks;
-            info.name = mem.prgm_name;   
-            info.running = true;
+            info.name = mem.prgm_name;
+            info.started = true;   
+            
+           for(auto& node : _nodeMap){
+                info.running_on_node[node.first] = false;
+            }              
             
             _programMap[mem.prgm_name] = info;
         }        
@@ -357,6 +370,62 @@ namespace MobNode
     
     void NodeServer::_handleMsgSetTasks(mob::node_message& msg){
         std::cout << "set_tasks" << std::endl;
+        
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        node_task_data data;
+        ia >> data;  
+        
+        //Set tasks in the program map
+        _programMap.at(data.prgm_name).task_indices.clear();
+        _programMap.at(data.prgm_name).task_indices = data.task_list;
+        
+        //Bounce the tasks to the correct program on each node
+        boost::thread sendTasks([=](){
+            size_t nodeIdx = 0;
+            for(auto& node : _nodeMap){
+                if(node.second){
+                    while(!_programMap[data.prgm_name].running_on_node.at(node.first)); //block until running
+                    
+                    if(_programMap[data.prgm_name].running_on_node.at(node.first)){
+                        mob::node_message msgOut(mob::PRGM_SET_TASKS);
+                        
+                        std::stringstream dataStream;
+                        boost::archive::text_oarchive oa(dataStream);
+                        oa << data;
+                        
+                        msgOut.set_data(dataStream.str().c_str(), dataStream.str().size());
+                        std::pair<char*, size_t> msgPair = msgOut.encode();
+                        
+                        asio::ip::udp::resolver resolver(*_service);
+                        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), node.first, boost::lexical_cast<std::string>(9002));
+                        asio::ip::udp::endpoint ep = *resolver.resolve(query);
+                        
+                        _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                  
+                    
+                        nodeIdx++;
+                    }
+                }
+            }
+        });
+    }
+    
+    void NodeServer::_handleMsgPrgmStarted(mob::node_message& msg){
+        std::cout << "prgm_started" << std::endl;
+        
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        prgm_started_data data;
+        ia >> data;
+        
+        //Update running status
+        _programMap[data.prgm_name].running_on_node[data.node_name] = true;          
     }
 
 }

@@ -13,7 +13,9 @@ namespace MobNode
         std::string name;
         size_t num_tasks;
         std::vector<size_t> task_indices; //indices assigned to this node
-        bool running = false;
+        
+        bool started;
+        std::map<std::string, bool> running_on_node;
     };
     
     struct prgm_data{
@@ -36,7 +38,20 @@ namespace MobNode
             ar & prgm_name;
             ar & task_list;
         }
-    };    
+    };   
+    
+    struct prgm_started_data{
+        std::string node_name;
+        std::string prgm_name;
+        bool status;
+        
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned int version){
+            ar & node_name;
+            ar & prgm_name;
+            ar & status;
+        }
+    };      
 
     class NodeServer{
     private:
@@ -68,6 +83,7 @@ namespace MobNode
         void _handleMsgLaunchPrgm(mob::node_message& msg);
         void _handleMsgStartPrgm(mob::node_message& msg);
         void _handleMsgSetTasks(mob::node_message& msg);
+        void _handleMsgPrgmStarted(mob::node_message &msg);
     };
 
 }

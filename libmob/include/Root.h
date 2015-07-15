@@ -5,6 +5,30 @@
 
 namespace mob
 {
+    
+    struct node_task_data{
+        std::string prgm_name;
+        std::vector<size_t> task_list;
+        
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned int version){
+            ar & prgm_name;
+            ar & task_list;
+        }
+    };
+    
+    struct prgm_started_data{
+        std::string node_name;
+        std::string prgm_name;
+        bool status;
+        
+        template<typename Archive>
+        void serialize(Archive& ar, const unsigned int version){
+            ar & node_name;
+            ar & prgm_name;
+            ar & status;
+        }
+    };       
 
     class /*MOBAPI*/ root{
     private:
@@ -38,6 +62,7 @@ namespace mob
         
         //void _handle_node_ping_lib(node_message& msg);
         void _handle_prgm_get_mem(node_message& msg);
+        void _handle_prgm_set_tasks(node_message& msg);
         
         void _prgm_send_mem(node_message& msg);
         void _prgm_get_mem(node_message& msg);

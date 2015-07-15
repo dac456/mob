@@ -9,6 +9,7 @@ int main(int argc, char* argv[])
 
     mob::root mob;
     mob.mob_init(argc, argv);
+    std::cout << "initialized" << std::endl;
     
     
     //TODO: specify types like float4 and allow indicating in/out for data
@@ -29,15 +30,15 @@ int main(int argc, char* argv[])
     
     mob::task test([&a, &b, &c](size_t global_index){
         
-        for(int i=0; i<4; i++){
-            std::cout << a[i] << std::endl;
-        }
+        c.set(global_index, a[global_index] + b[global_index]);
+        std::cout << c[global_index] << std::endl;        
+        
     });
     
     test.exec(mob);
     
+    std::cout << "enter 'q' to quit... " << std::endl;
     for(;;){
-        std::cout << "enter 'q' to quit... " << std::endl;
         if(std::cin.get() == 'q'){
             break;
         }

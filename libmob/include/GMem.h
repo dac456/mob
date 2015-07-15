@@ -49,17 +49,16 @@ namespace mob
             _name = name;
             
             //Create shared region
-            std::cout << "gmem debug : " << mob_root.get_name() << std::endl;
             bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());
-            segment.construct<T>(name.c_str())[sz](0);
+            segment.find_or_construct<T>(name.c_str())[sz](0);
             
             _mob_root = &mob_root;
-            
+
             _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1));
         }
         
         ~gmem(){
-            bip::shared_memory_object::remove(_mem_name.c_str());
+            bip::shared_memory_object::remove(_name.c_str());
         }
         
         void set(size_t idx, T val){
