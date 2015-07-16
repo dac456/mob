@@ -227,6 +227,7 @@ namespace MobNode
             info.num_tasks = mem.num_tasks;
             info.name = mem.prgm_name;
             info.started = true;
+            info.finished = false;
             
             for(auto& node : _nodeMap){
                 info.running_on_node[node.first] = false;
@@ -359,6 +360,7 @@ namespace MobNode
             info.num_tasks = mem.num_tasks;
             info.name = mem.prgm_name;
             info.started = true;   
+            info.finished = false;
             
            for(auto& node : _nodeMap){
                 info.running_on_node[node.first] = false;

@@ -28,7 +28,7 @@ namespace mob
             else{     
                 if(strcmp(argv[i], "--tasklist") == 0){
                     nextParam = 1;
-                }          
+                }
             }            
         }
         
@@ -77,7 +77,7 @@ namespace mob
         }
         else{
             std::cout << "broadcast error" << std::endl;
-        }          
+        }      
         
         //Start an async server so we can talk to the network
         _start_accept();

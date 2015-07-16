@@ -15,6 +15,7 @@ namespace MobNode
         std::vector<size_t> task_indices; //indices assigned to this node
         
         bool started;
+        bool finished;
         std::map<std::string, bool> running_on_node;
     };
     

@@ -17,6 +17,7 @@ namespace mob
         PRGM_GET_MEM,        //program requests remote data
         PRGM_SET_MEM,        //program sets remote data
         PRGM_STARTED,        //notify that the program has started running locally
+        PRGM_FINISHED,       //notify that the program has completed its tasks
     } MSG_TYPE;
     
     struct msg_header{

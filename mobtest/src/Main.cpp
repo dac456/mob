@@ -39,11 +39,13 @@ int main(int argc, char* argv[])
         
     });
     
-    std::cout << "program defined" << std::endl;
     test.exec(mob);
     
     std::cout << "enter 'q' to quit... " << std::endl;
     for(;;){
+        for(size_t i=0; i<4; i++){
+            std::cout << c[i] << std::endl;
+        }
         if(std::cin.get() == 'q'){
             break;
         }

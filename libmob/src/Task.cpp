@@ -24,7 +24,13 @@ namespace mob
                 //boost::thread t(_task, idx);
                 _task(*it);
             }
+            
+            //mob_root._prgm_finished();
         });
+    }
+    
+    void task::set_exit_task(mob_task_finished task){
+        _exit_task = task;
     }
 
 }
