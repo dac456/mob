@@ -40,7 +40,6 @@ namespace mob
                 
         //mob
         std::string _prgm_name;
-        std::vector<size_t> _task_indices;
         bool _waiting_for_tasks;
         
         boost::signals2::signal<void(size_t)> _sig_remote_get;
@@ -55,6 +54,7 @@ namespace mob
         std::string get_name();
         bool is_waiting_for_tasks();
         
+        TaskList* get_task_list();
         
     private:       
         void _start_accept();
@@ -62,7 +62,6 @@ namespace mob
         
         //void _handle_node_ping_lib(node_message& msg);
         void _handle_prgm_get_mem(node_message& msg);
-        void _handle_prgm_set_tasks(node_message& msg);
         
         void _prgm_send_mem(node_message& msg);
         void _prgm_get_mem(node_message& msg);

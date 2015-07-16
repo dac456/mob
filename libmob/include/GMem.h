@@ -61,6 +61,17 @@ namespace mob
             bip::shared_memory_object::remove(_name.c_str());
         }
         
+        void init(size_t idx, T val){
+            //Update local memory
+            bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
+            std::pair<T*, bip::managed_shared_memory::size_type> res;
+            
+            res = segment.find<T>(_name.c_str());
+            T* mem = res.first;
+
+            (*(mem+idx)) = val;            
+        }
+        
         void set(size_t idx, T val){
             //TODO: update local (or remote) node with new value (?)
             //      need some way of tracking which node is responsible for which tasks
@@ -75,8 +86,10 @@ namespace mob
 
             (*(mem+idx)) = val;
 
-            //Update remote if not our task
-            if(std::find(_mob_root->_task_indices.begin(), _mob_root->_task_indices.end(), idx) == _mob_root->_task_indices.end()){
+            //Update remote if not our task  
+            TaskList* task_list = segment.find<TaskList>("task_list").first;  
+            
+            if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
                 _send_mem(_name, val, idx);
             }
         }
@@ -92,7 +105,10 @@ namespace mob
         const T operator[] (const int idx){
             assert(idx >= 0 && idx < _sz);
             
-            if(std::find(_mob_root->_task_indices.begin(), _mob_root->_task_indices.end(), idx) != _mob_root->_task_indices.end()){
+            bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());      
+            TaskList* task_list = segment.find<TaskList>("task_list").first;  
+            
+            if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
                 bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
                 std::pair<T*, bip::managed_shared_memory::size_type> res;
                 

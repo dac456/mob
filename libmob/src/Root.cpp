@@ -22,7 +22,7 @@ namespace mob
         for(int i=0; i<argc; i++){
             if(strstr(argv[i], "--") == nullptr){
                 if(nextParam == 1){
-                    _task_indices.push_back(atoi(argv[i]));
+                    //_task_indices.push_back(atoi(argv[i]));
                 }
             }
             else{     
@@ -33,15 +33,17 @@ namespace mob
         }
         
         //Did we get tasks?
-        if(!_task_indices.empty()){
+        /*if(!_task_indices.empty()){
             _waiting_for_tasks = false;
-        }
+        }*/
         
         //Create shared memory pool
         bip::shared_memory_object::remove(_prgm_name.c_str()); //Clear anything left from previous execution
+        bip::shared_memory_object::remove("task_list");
         
         try{
             bip::managed_shared_memory segment(bip::open_or_create, _prgm_name.c_str(), 65536);
+            segment.construct<TaskList>("task_list")(segment.get_segment_manager());
         }
         catch(...){
             bip::shared_memory_object::remove(_prgm_name.c_str());
@@ -95,6 +97,17 @@ namespace mob
         return _waiting_for_tasks;
     }
     
+    TaskList* root::get_task_list(){
+        //bip::scoped_lock<bip::named_mutex> lock(task_mutex);
+        
+        std::cout << "hang 1" << std::endl;
+        bip::managed_shared_memory segment(bip::open_only, _prgm_name.c_str());      
+        std::cout << "hang 2" << std::endl;
+        TaskList* ret = segment.find<TaskList>("task_list").first;
+        
+        return ret;
+    }
+    
     
     void root::_start_accept(){
         _socket.async_receive_from(asio::buffer(_buffer), _sender_endpoint, boost::bind(&root::_handle_receive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
@@ -115,10 +128,6 @@ namespace mob
                     
                 case PRGM_GET_MEM:
                     _handle_prgm_get_mem(msg);
-                    break;
-                    
-                case PRGM_SET_TASKS:
-                    _handle_prgm_set_tasks(msg);
                     break;
                     
                 default:
@@ -155,26 +164,6 @@ namespace mob
         
         //Signal gmem that the data is updated
         _sig_remote_get(mem.idx);   
-    }
-    
-    void root::_handle_prgm_set_tasks(node_message& msg){
-        std::cout << "root set tasks" << std::endl;
-        
-        //Decode message
-        std::stringstream msg_stream;
-        msg_stream << msg.get_data();
-        
-        boost::archive::text_iarchive ia(msg_stream);
-        node_task_data data;
-        ia >> data;    
-        
-        //Set tasks
-        _task_indices.clear();
-        if(_prgm_name == data.prgm_name){
-            for(size_t i=0; i<data.task_list.size(); i++){
-                _task_indices.push_back(data.task_list[i]);
-            }
-        }    
     }
     
     void root::_prgm_send_mem(node_message& msg){

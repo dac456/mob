@@ -16,6 +16,9 @@ namespace asio = boost::asio;
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/managed_shared_memory.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
+#include <boost/interprocess/sync/named_recursive_mutex.hpp>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 namespace bip = boost::interprocess;
 
 #include <boost/archive/text_iarchive.hpp>
@@ -36,5 +39,7 @@ namespace proc = boost::process;
 
 typedef bip::allocator<size_t, bip::managed_shared_memory::segment_manager> ShmemAllocator;
 typedef std::vector<size_t, ShmemAllocator> TaskList;   
+
+static bip::named_mutex task_mutex(bip::open_or_create, "mob_task_lock_mutex");
 
 #endif
