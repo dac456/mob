@@ -94,6 +94,35 @@ namespace mob
             }
         }
         
+        const T get(const int idx){
+            assert(idx >= 0 && idx < _sz);
+            try{
+                std::cout << "hang1" << std::endl;
+                bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
+
+                std::cout << "hang2" << std::endl;  
+                //TaskList* task_list = segment.find<TaskList>("task_list").first;  
+                std::cout << "hang3" << std::endl;
+                /*if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
+                    //bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
+                    std::pair<T*, bip::managed_shared_memory::size_type> res;
+                    
+                    res = segment.find<T>(_name.c_str());
+                    T* mem = res.first;
+                    
+                    return (*(mem+idx));
+                }
+                else{
+                    _waiting_for_remote = std::make_pair(idx, true);
+                    
+                    return _get_mem(_name, idx);
+                }*/
+            }
+            catch(bip::interprocess_exception& e){
+                std::cout << e.what() << std::endl;
+            }            
+        }
+        
         size_t size(){
             return _sz;
         }
@@ -104,24 +133,38 @@ namespace mob
         
         const T operator[] (const int idx){
             assert(idx >= 0 && idx < _sz);
-            
-            bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());      
-            TaskList* task_list = segment.find<TaskList>("task_list").first;  
-            
-            if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
-                bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
-                std::pair<T*, bip::managed_shared_memory::size_type> res;
+            try{
+                /*bip::named_condition cond(bip::open_only, "test_cnd");
+                bip::named_mutex mtx(bip::open_only, "test_mtx");
                 
-                res = segment.find<T>(_name.c_str());
-                T* mem = res.first;
+                bip::scoped_lock<bip::named_mutex> lock(mtx);*/
                 
-                return (*(mem+idx));
+                std::cout << "hang1" << std::endl;
+                bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
+
+                std::cout << "hang2" << std::endl;  
+                //TaskList* task_list = segment.find<TaskList>("task_list").first;  
+                std::cout << "hang3" << std::endl;
+                /*if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
+                    //bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
+                    std::pair<T*, bip::managed_shared_memory::size_type> res;
+                    
+                    res = segment.find<T>(_name.c_str());
+                    T* mem = res.first;
+                    
+                    return (*(mem+idx));
+                }
+                else{
+                    _waiting_for_remote = std::make_pair(idx, true);
+                    
+                    return _get_mem(_name, idx);
+                }*/
+                //cond.notify_all();
+                //cond.wait(lock);
             }
-            else{
-                _waiting_for_remote = std::make_pair(idx, true);
-                
-                return _get_mem(_name, idx);
-            }
+            catch(bip::interprocess_exception& e){
+                std::cout << e.what() << std::endl;
+            }            
         }
         
         void remote_get_notify(size_t task_idx){

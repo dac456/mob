@@ -1,6 +1,7 @@
 #include "Root.h"
 #include "NodeMessage.h"
 #include "GMem.h"
+#include "Kernel.h"
 
 namespace mob
 {
@@ -38,14 +39,22 @@ namespace mob
         }*/
         
         //Create shared memory pool
+        bip::named_condition::remove("test_cnd");
+        bip::named_mutex::remove("test_mtx");
+        
         bip::shared_memory_object::remove(_prgm_name.c_str()); //Clear anything left from previous execution
         bip::shared_memory_object::remove("task_list");
         
         try{
-            bip::managed_shared_memory segment(bip::open_or_create, _prgm_name.c_str(), 65536);
+            std::cout << "creating memory" << std::endl;
+            bip::managed_shared_memory segment(bip::open_or_create, _prgm_name.c_str(), 1024*1024);
             segment.construct<TaskList>("task_list")(segment.get_segment_manager());
+            
+            bip::named_condition cond(bip::create_only,  "test_cnd");
+            bip::named_mutex task_mutex(bip::create_only, "test_mtx");
         }
         catch(...){
+            std::cout << "exception" << std::endl;
             bip::shared_memory_object::remove(_prgm_name.c_str());
         }
         
@@ -87,6 +96,14 @@ namespace mob
     void root::mob_kill(){
         _socket.close();
         bip::shared_memory_object::remove(_prgm_name.c_str());
+    }
+    
+    void root::add_kernel(kernel kern){
+        _kernel_map[kern.get_name()] = &kern;
+    }
+    
+    void root::exec_kernel(std::string name){
+        _kernel_map.at(name)->_exec(*this);
     }
     
     std::string root::get_name(){

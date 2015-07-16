@@ -1,5 +1,5 @@
 #include "Root.h"
-#include "Task.h"
+#include "Kernel.h"
 #include "GMalloc.h"
 
 int main(int argc, char* argv[])
@@ -28,9 +28,9 @@ int main(int argc, char* argv[])
     
     mob::gmem<float> c("c", mob, 4);
     
-    mob::task test([&a, &b, &c](size_t global_index){
+    mob::kernel test("test", [&a, &b, &c](size_t global_index){
         
-        c.set(global_index, a[global_index] + b[global_index]);
+        //c.set(global_index, a[global_index] + b[global_index]);
         //std::cout << c[global_index] << std::endl;   
         std::ofstream fout;
         fout.open("/home/dcook/out.txt", std::ios::app);
@@ -39,16 +39,17 @@ int main(int argc, char* argv[])
         
     });
     
-    test.exec(mob);
+    mob.add_kernel(test);
+    mob.exec_kernel("test");
     
-    std::cout << "enter 'q' to quit... " << std::endl;
+    //std::cout << "enter 'q' to quit... " << std::endl;
     for(;;){
-        for(size_t i=0; i<4; i++){
+        /*for(size_t i=0; i<4; i++){
             std::cout << c[i] << std::endl;
         }
         if(std::cin.get() == 'q'){
             break;
-        }
+        }*/
     }
     
     //mob::gfree(diff);

@@ -42,6 +42,8 @@ namespace mob
         std::string _prgm_name;
         bool _waiting_for_tasks;
         
+        std::map<std::string, kernel*> _kernel_map;
+        
         boost::signals2::signal<void(size_t)> _sig_remote_get;
         
     public:
@@ -50,6 +52,9 @@ namespace mob
         
         void mob_init(int argc, char* argv[]);
         void mob_kill();
+        
+        void add_kernel(kernel kern);
+        void exec_kernel(std::string name);
         
         std::string get_name();
         bool is_waiting_for_tasks();

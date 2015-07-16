@@ -414,7 +414,7 @@ namespace MobNode
             }*/
             //TODO: this could also be accomplished with a shared flag
             while(!_programMap[data.prgm_name].running_on_node.at(asio::ip::host_name())); //block until running
-            
+
             bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());      
             TaskList* mem = segment.find<TaskList>("task_list").first;
             

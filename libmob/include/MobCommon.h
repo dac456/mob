@@ -29,7 +29,7 @@ namespace mob
     template<typename T> class gmem;
     class root;
     class node_message;
-    class task;
+    class kernel;
 
 }
 
