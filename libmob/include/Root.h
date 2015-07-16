@@ -53,10 +53,10 @@ namespace mob
         void mob_init(int argc, char* argv[]);
         void mob_kill();
         
-        void add_kernel(kernel kern);
+        void add_kernel(kernel& kern); //TODO: figure out why this hangs without '&'
         void exec_kernel(std::string name);
         
-        std::string get_name();
+        const std::string get_name() const;
         bool is_waiting_for_tasks();
         
         TaskList* get_task_list();

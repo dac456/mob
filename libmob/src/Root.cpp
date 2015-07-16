@@ -98,7 +98,7 @@ namespace mob
         bip::shared_memory_object::remove(_prgm_name.c_str());
     }
     
-    void root::add_kernel(kernel kern){
+    void root::add_kernel(kernel& kern){
         _kernel_map[kern.get_name()] = &kern;
     }
     
@@ -106,7 +106,7 @@ namespace mob
         _kernel_map.at(name)->_exec(*this);
     }
     
-    std::string root::get_name(){
+    const std::string root::get_name() const{
         return _prgm_name;
     }
     
