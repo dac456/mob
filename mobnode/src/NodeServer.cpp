@@ -122,7 +122,7 @@ namespace MobNode
         std::pair<char*, size_t> msgPair = msgOut.encode();
         
         asio::ip::udp::resolver res(*_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(msg.get_data()), boost::lexical_cast<std::string>(9003));
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(msg.get_data()), boost::lexical_cast<std::string>(LNCH_PORT));
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));        
@@ -181,7 +181,7 @@ namespace MobNode
         std::pair<char*, size_t> msgPair = msgOut.encode();
         
         asio::ip::udp::resolver resolver(*_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(mem.node_name), boost::lexical_cast<std::string>(9002));
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(mem.node_name), boost::lexical_cast<std::string>(PRGM_PORT));
         asio::ip::udp::endpoint ep = *resolver.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                

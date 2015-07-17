@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
         
         std::pair<char*, size_t> msg_pair = msg.encode();
 
-        asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+        asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
         broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
         broad_socket.close(error);
     }
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     //Wait for first response
     char rec_buf[1024];
     asio::ip::udp::endpoint sender_endpoint;
-    asio::ip::udp::socket socket(service, asio::ip::udp::endpoint(asio::ip::udp::v4(), 9003));
+    asio::ip::udp::socket socket(service, asio::ip::udp::endpoint(asio::ip::udp::v4(), LNCH_PORT));
     socket.receive_from(asio::buffer(rec_buf), sender_endpoint);
 
     //Get node
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
     std::pair<char*, size_t> msgPair = msgOut.encode();
     
     asio::ip::udp::resolver res(service);
-    asio::ip::udp::resolver::query query(asio::ip::udp::v4(), first_node, boost::lexical_cast<std::string>(9001));
+    asio::ip::udp::resolver::query query(asio::ip::udp::v4(), first_node, boost::lexical_cast<std::string>(NODE_PORT));
     asio::ip::udp::endpoint ep = *res.resolve(query);
     
     socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);

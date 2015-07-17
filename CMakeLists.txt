@@ -56,6 +56,19 @@ target_link_libraries(mobtest
    mob
 )
 
+# mobtest_host
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mobtest_host/include)
+
+file(GLOB_RECURSE TEST_HDR RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS mobtest_host/include/*.h)
+file(GLOB_RECURSE TEST_SRC RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} FOLLOW_SYMLINKS mobtest_host/src/*.cpp)
+
+add_executable(mobtest_host ${TEST_SRC} ${TEST_HDR})
+
+target_link_libraries(mobtest_host
+   ${Boost_LIBRARIES}
+   mob
+)
+
 # moblaunch
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/moblaunch/include)
 

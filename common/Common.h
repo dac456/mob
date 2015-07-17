@@ -37,8 +37,40 @@ namespace bip = boost::interprocess;
 namespace proc = boost::process;
 
 #define NODE_PORT 9001
+#define PRGM_PORT 9002
+#define LNCH_PORT 9003
+#define HOST_PORT 9004
 
 typedef bip::allocator<size_t, bip::managed_shared_memory::segment_manager> ShmemAllocator;
 typedef std::vector<size_t, ShmemAllocator> TaskList;   
+
+struct prgm_kernel_data{
+    std::string host_name;
+    std::string prgm_name;
+    std::string kernel_name;
+    
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned int version){
+        ar & host_name;
+        ar & prgm_name;
+        ar & kernel_name;
+    }
+};
+
+struct prgm_var_data{
+    std::string host_name;
+    std::string prgm_name;
+    std::string var_name;
+    
+    std::vector<float> var;
+    
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned int version){
+        ar & host_name;
+        ar & prgm_name;
+        ar & var_name;
+        ar & var;
+    }    
+};
 
 #endif

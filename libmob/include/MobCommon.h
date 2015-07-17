@@ -30,6 +30,7 @@ namespace mob
     class root;
     class node_message;
     class kernel;
+    class host;
 
 }
 

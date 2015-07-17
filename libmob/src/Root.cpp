@@ -147,6 +147,14 @@ namespace mob
                     _handle_prgm_get_mem(msg);
                     break;
                     
+                case HOST_EXEC_KERNEL:
+                    _handle_host_exec_kernel(msg);
+                    break;
+                    
+                case HOST_GET_MEM:
+                    _handle_host_get_mem(msg);
+                    break;
+                    
                 default:
                     break;
             }
@@ -181,6 +189,90 @@ namespace mob
         
         //Signal gmem that the data is updated
         _sig_remote_get(mem.idx);   
+    }
+    
+    void root::_handle_host_exec_kernel(node_message& msg){
+        std::cout << "exec kernel" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        prgm_kernel_data data;
+        ia >> data;
+        
+        //Launch kernel
+        if(data.prgm_name == _prgm_name){ 
+            if(_kernel_map.find(data.kernel_name) != _kernel_map.end()){
+                exec_kernel(data.kernel_name);
+            }  
+        }
+        
+        //Ping back
+        mob::node_message msgOut(mob::NODE_PING_LIB);
+        std::string node_name = asio::ip::host_name();
+        msgOut.set_data(node_name.c_str(), node_name.length());
+        
+        std::pair<char*, size_t> msgPair = msgOut.encode();
+        
+        asio::ip::udp::resolver res(_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
+        asio::ip::udp::endpoint ep = *res.resolve(query);
+        
+        //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);                                          
+    }
+    
+    void root::_handle_host_get_mem(node_message& msg){
+        std::cout << "host get mem" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        prgm_var_data data;
+        ia >> data;
+        
+        if(data.prgm_name == _prgm_name){
+            //Get shared local memory
+            bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
+            std::pair<float*, bip::managed_shared_memory::size_type> res;
+            
+            res = segment.find<float>(data.var_name.c_str());
+            float* val = res.first;
+            
+            std::vector<float> out_vec(val, val + res.second);
+            data.var = out_vec; 
+                       
+            //Ping back
+            std::cout << "ping back to " << data.host_name << std::endl;
+            node_message msg_out(HOST_GET_MEM);
+            
+            std::stringstream msg_stream_out;
+            boost::archive::text_oarchive oa(msg_stream_out);
+            oa << data;
+            
+            std::cout << "hang0" << std::endl;              
+            
+            msg.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
+            std::cout << "hang0a " << msg_stream_out.str().size() << std::endl;  
+            std::pair<char*, size_t> msgPair = msg_out.encode();
+            
+            std::cout << "hang1" << std::endl;
+            
+            asio::ip::udp::resolver resolver(_service);
+            asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
+            asio::ip::udp::endpoint ep = *resolver.resolve(query);
+            
+            std::cout << "hang2" << std::endl;
+            
+            //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+            std::cout << "send to " << data.host_name << std::endl;
+            _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+            std::cout << "sent" << std::endl;               
+        }       
     }
     
     void root::_prgm_send_mem(node_message& msg){

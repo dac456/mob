@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
     });
     
     mob.add_kernel(test);
-    mob.exec_kernel("test");
+    //mob.exec_kernel("test");
     
     //std::cout << "enter 'q' to quit... " << std::endl;
     for(;;){

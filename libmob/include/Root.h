@@ -67,6 +67,8 @@ namespace mob
         
         //void _handle_node_ping_lib(node_message& msg);
         void _handle_prgm_get_mem(node_message& msg);
+        void _handle_host_exec_kernel(node_message& msg);
+        void _handle_host_get_mem(node_message& msg);
         
         void _prgm_send_mem(node_message& msg);
         void _prgm_get_mem(node_message& msg);
