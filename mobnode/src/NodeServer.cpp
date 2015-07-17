@@ -108,6 +108,7 @@ namespace MobNode
                 asio::ip::udp::endpoint ep = *res.resolve(query);
                 
                 _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+                delete[] msgPair.first;
             }
         }
         
@@ -126,6 +127,7 @@ namespace MobNode
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));        
+        delete[] msgPair.first;
     }
     
     void NodeServer::_handleMsgPrgmSetMem(mob::node_message& msg){
@@ -185,6 +187,7 @@ namespace MobNode
         asio::ip::udp::endpoint ep = *resolver.resolve(query);
         
         _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
+        delete[] msgPair.first;
     }
     
     void NodeServer::_handleMsgLaunchPrgm(mob::node_message& msg){
@@ -265,6 +268,8 @@ namespace MobNode
                 asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
                 broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
                 broad_socket.close(error);
+                
+                delete[] msg_pair.first; 
             }
             else{
                 std::cout << "broadcast error" << std::endl;
@@ -307,7 +312,8 @@ namespace MobNode
                 asio::ip::udp::endpoint ep = *resolver.resolve(query);
                 
                 _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                  
-            
+                delete[] msgPair.first; 
+                
                 nodeIdx++;
             }
         }        

@@ -61,6 +61,8 @@ int main(int argc, char* argv[])
         asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
         broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
         broad_socket.close(error);
+        
+        delete[] msg_pair.first;
     }
     else{
         std::cout << "broadcast error" << std::endl;
@@ -103,5 +105,6 @@ int main(int argc, char* argv[])
     asio::ip::udp::endpoint ep = *res.resolve(query);
     
     socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+    delete[] msgPair.first;
 
 }

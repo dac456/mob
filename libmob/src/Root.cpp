@@ -221,7 +221,9 @@ namespace mob
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
-        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);                                          
+        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);    
+        
+        delete[] msgPair.first;                                      
     }
     
     void root::_handle_host_get_mem(node_message& msg){
@@ -256,7 +258,7 @@ namespace mob
             
             std::cout << "hang0" << std::endl;              
             
-            msg.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
+            msg_out.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
             std::cout << "hang0a " << msg_stream_out.str().size() << std::endl;  
             std::pair<char*, size_t> msgPair = msg_out.encode();
             

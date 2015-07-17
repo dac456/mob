@@ -53,7 +53,9 @@ namespace mob
     
     std::pair<char*, size_t> node_message::encode(){
         size_t bufLen = _header.bodySize + 1 + sizeof(size_t)*2;
+        std::cout << "buflen " << bufLen << " " << _header.bodySize << std::endl;
         char* buf = new char[bufLen];
+        //char buf[bufLen];
         
         buf[0] = _header.msgType;
         

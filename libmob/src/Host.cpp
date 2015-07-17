@@ -41,6 +41,8 @@ namespace mob
             asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), PRGM_PORT);
             broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
             broad_socket.close(error);
+            
+            delete[] msg_pair.first;
         }
         else{
             std::cout << "broadcast error" << std::endl;
@@ -68,8 +70,9 @@ namespace mob
         asio::ip::udp::endpoint ep = *res.resolve(query);
         
         _socket.async_send_to(asio::buffer(msg_pair.first, msg_pair.second), ep, boost::bind(&host::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));  
+        delete[] msg_pair.first;
         
-       //while(_waiting_for_capture);
+       while(_waiting_for_capture);
        
        return _capture_buffer;       
     }
