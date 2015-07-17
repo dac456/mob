@@ -17,10 +17,12 @@ namespace mob
         PRGM_GET_MEM,        //program requests remote data
         PRGM_SET_MEM,        //program sets remote data
         PRGM_STARTED,        //notify that the program has started running locally
-        PRGM_FINISHED,       //notify that the program has completed its tasks
+        PRGM_FINISHED,       //notify that the program has ended
+        PRGM_REG_KERNEL,
         HOST_EXEC_KERNEL,    //trigger kernel exec on all nodes in a given program
         HOST_GET_MEM,        //get memory contents of a named gmem object in a program
         HOST_SET_MEM,        //set memory contents of a named gmem object in a program
+        KERNEL_FINISHED,
     } MSG_TYPE;
     
     struct msg_header{

@@ -72,12 +72,12 @@ namespace mob
         
         void _prgm_send_mem(node_message& msg);
         void _prgm_get_mem(node_message& msg);
-        //void _prgm_finished();
+        void _kernel_finished(std::string kernel);
         
         typedef boost::signals2::signal<void(size_t)>::slot_type remote_get_event;
         boost::signals2::connection _connect_remote_get(const remote_get_event& e);
         
-        friend class task;
+        friend class kernel;
         template<typename T> friend class gmem; //TODO: breaks export (I think)
     };
 

@@ -91,9 +91,10 @@ namespace mob
             //Update remote if not our task  
             TaskList* task_list = segment.find<TaskList>("task_list").first;  
             
-            if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
+            //TODO: always send to make data capture easier. in practice should not do this
+            //if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
                 _send_mem(_name, val, idx);
-            }
+            //}
         }
         
         size_t size(){

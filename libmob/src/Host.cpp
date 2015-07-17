@@ -46,7 +46,9 @@ namespace mob
         }
         else{
             std::cout << "broadcast error" << std::endl;
-        }           
+        }
+        
+        _kernel_status_map[std::make_pair(prgm,kernel)] = false;           
     }
     
     std::vector<float> host::capture(std::string prgm, std::string var){
@@ -77,6 +79,10 @@ namespace mob
        return _capture_buffer;       
     }
     
+    void host::wait(std::string prgm, std::string kernel){
+        while(!_kernel_status_map.at(std::make_pair(prgm,kernel)));
+    }
+    
     
     void host::_start_accept(){
         _socket.async_receive_from(asio::buffer(_buffer), _sender_endpoint, boost::bind(&host::_handle_receive, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
@@ -96,6 +102,10 @@ namespace mob
                     
                 case HOST_GET_MEM:
                     _handle_get_mem(msg);
+                    break;
+                    
+                case KERNEL_FINISHED:
+                    _handle_kernel_finished(msg);
                     break;
                     
                 default:
@@ -133,6 +143,21 @@ namespace mob
         _capture_buffer.clear();
         _capture_buffer = data.var;
         _waiting_for_capture = false;        
+    }
+    
+    void host::_handle_kernel_finished(node_message& msg){
+        std::cout << "host handle kernel finished" << std::endl;
+        
+         //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        kernel_finished_data data;
+        ia >> data;
+        
+        //Update status
+        _kernel_status_map[std::make_pair(data.prgm_name, data.kernel_name)] = data.status;       
     }
 
 }

@@ -17,6 +17,7 @@ namespace MobNode
         bool started;
         bool finished;
         std::map<std::string, bool> running_on_node;
+        std::map<std::pair<std::string,std::string>, bool> kernel_status_on_node;
     };
     
     struct prgm_data{
@@ -84,7 +85,9 @@ namespace MobNode
         void _handleMsgLaunchPrgm(mob::node_message& msg);
         void _handleMsgStartPrgm(mob::node_message& msg);
         void _handleMsgSetTasks(mob::node_message& msg);
-        void _handleMsgPrgmStarted(mob::node_message &msg);
+        void _handleMsgPrgmStarted(mob::node_message& msg);
+        void _handleMsgPrgmRegKernel(mob::node_message& msg);
+        void _handleMsgKernelFinished(mob::node_message& msg);
     };
 
 }

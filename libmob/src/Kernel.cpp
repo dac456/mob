@@ -28,7 +28,7 @@ namespace mob
                 _kernel(*it);
             }
             
-            //mob_root._prgm_finished();
+            mob_root._kernel_finished(_name);
         });
     }
     

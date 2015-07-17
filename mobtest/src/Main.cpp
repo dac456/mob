@@ -32,10 +32,10 @@ int main(int argc, char* argv[])
         
         c.set(global_index, a[global_index] + b[global_index]);
         //std::cout << c[global_index] << std::endl;   
-        std::ofstream fout;
+        /*std::ofstream fout;
         fout.open("/home/dcook/out.txt", std::ios::app);
         fout << c[global_index] << std::endl;
-        fout.close();     
+        fout.close(); */    
         
     });
     

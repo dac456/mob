@@ -100,6 +100,38 @@ namespace mob
     
     void root::add_kernel(kernel& kern){
         _kernel_map[kern.get_name()] = &kern;
+        
+        //Broadcast kernel name to nodes
+        boost::system::error_code error;
+        asio::ip::udp::socket broad_socket(_service);
+        broad_socket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broad_socket.set_option(asio::socket_base::broadcast(true));
+            
+            node_message msg(PRGM_REG_KERNEL);
+            
+            prgm_kernel_data data;
+            data.host_name = asio::ip::host_name();
+            data.prgm_name = _prgm_name;
+            data.kernel_name = kern.get_name();
+            
+            std::stringstream msg_stream;
+            boost::archive::text_oarchive oa(msg_stream);
+            oa << data;            
+            
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            std::pair<char*, size_t> msg_pair = msg.encode();
+
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
+            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+            broad_socket.close(error);
+            
+            delete[] msg_pair.first;
+        }
+        else{
+            std::cout << "broadcast error" << std::endl;
+        }         
     }
     
     void root::exec_kernel(std::string name){
@@ -273,7 +305,9 @@ namespace mob
             //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
             std::cout << "send to " << data.host_name << std::endl;
             _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
-            std::cout << "sent" << std::endl;               
+            std::cout << "sent" << std::endl;   
+            
+            delete[] msgPair.first;            
         }       
     }
     
@@ -287,9 +321,11 @@ namespace mob
             
             std::pair<char*, size_t> msg_pair = msg.encode();
 
-            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
             broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
             broad_socket.close(error);
+            
+            delete[] msg_pair.first;
         }
         else{
             std::cout << "broadcast error" << std::endl;
@@ -306,13 +342,49 @@ namespace mob
             
             std::pair<char*, size_t> msg_pair = msg.encode();
 
-            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
             broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
             broad_socket.close(error);
+            
+            delete[] msg_pair.first;
         }
         else{
             std::cout << "broadcast error" << std::endl;
         }           
+    }
+    
+    void root::_kernel_finished(std::string kernel){
+        boost::system::error_code error;
+        asio::ip::udp::socket broad_socket(_service);
+        broad_socket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broad_socket.set_option(asio::socket_base::broadcast(true));
+            
+            node_message msg(KERNEL_FINISHED);
+            
+            kernel_finished_data data;
+            data.host_name = asio::ip::host_name();
+            data.prgm_name = _prgm_name;
+            data.kernel_name = kernel;
+            data.status = true;
+            
+            std::stringstream msg_stream;
+            boost::archive::text_oarchive oa(msg_stream);
+            oa << data;
+                        
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            std::pair<char*, size_t> msg_pair = msg.encode();
+            
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
+            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+            broad_socket.close(error);
+            
+            delete[] msg_pair.first;
+        }
+        else{
+            std::cout << "broadcast error" << std::endl;
+        }   
     }
 
     

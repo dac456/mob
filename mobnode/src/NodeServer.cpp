@@ -70,6 +70,14 @@ namespace MobNode
                     _handleMsgPrgmStarted(msg);
                     break;
                     
+                case mob::PRGM_REG_KERNEL:
+                    _handleMsgPrgmRegKernel(msg);
+                    break;
+                    
+                case mob::KERNEL_FINISHED:
+                    _handleMsgKernelFinished(msg);
+                    break;
+                    
                 default:
                     break;
             }
@@ -265,7 +273,7 @@ namespace MobNode
         
                 std::pair<char*, size_t> msg_pair = msgOut.encode();
         
-                asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+                asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
                 broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
                 broad_socket.close(error);
                 
@@ -446,6 +454,82 @@ namespace MobNode
         
         //Update running status
         _programMap[data.prgm_name].running_on_node[data.node_name] = true;          
+    }
+    
+    void NodeServer::_handleMsgPrgmRegKernel(mob::node_message& msg){
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        prgm_kernel_data data;
+        ia >> data;
+        
+        _programMap[data.prgm_name].kernel_status_on_node[std::make_pair(data.host_name, data.kernel_name)] = false;        
+    }
+    
+    void NodeServer::_handleMsgKernelFinished(mob::node_message& msg){
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        kernel_finished_data data;
+        ia >> data;
+        
+        //Update kernel running status
+        _programMap[data.prgm_name].kernel_status_on_node[std::make_pair(data.host_name, data.kernel_name)] = data.status;
+        std::cout << "kernel on " << data.host_name << " complete" << std::endl; 
+        
+        //Check and see if all nodes finished
+        std::vector< std::pair<std::string, bool> > status;
+        for(auto& kernel_pair : _programMap[data.prgm_name].kernel_status_on_node){
+            if(kernel_pair.first.second == data.kernel_name){
+                status.push_back(std::make_pair(kernel_pair.first.first, kernel_pair.second));
+            }
+        }
+        
+        bool finished = true;
+        for(auto& pair : status){
+            if(!pair.second){
+                finished = false;
+            }
+        }
+        
+        //Ping back status to host(s) if complete
+        if(finished){
+            boost::system::error_code error;
+            asio::ip::udp::socket broad_socket(*_service);
+            broad_socket.open(asio::ip::udp::v4(), error);
+            if(!error){
+                broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+                broad_socket.set_option(asio::socket_base::broadcast(true));
+                
+                mob::node_message msgOut(mob::KERNEL_FINISHED);
+                
+                kernel_finished_data data_out;
+                data_out.host_name = asio::ip::host_name();
+                data_out.prgm_name = data.prgm_name;
+                data_out.kernel_name = data.kernel_name;
+                data_out.status = true;
+                
+                std::stringstream dataStreamOut;
+                boost::archive::text_oarchive oa(dataStreamOut);
+                oa << data_out;
+                
+                msgOut.set_data(dataStreamOut.str().c_str(), dataStreamOut.str().size());
+                std::pair<char*, size_t> msg_pair = msgOut.encode();
+        
+                asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), HOST_PORT);
+                broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+                broad_socket.close(error);
+                
+                delete[] msg_pair.first; 
+            }
+            else{
+                std::cout << "broadcast error" << std::endl;
+            }            
+        }       
     }
 
 }
