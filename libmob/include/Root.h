@@ -36,7 +36,7 @@ namespace mob
         asio::io_service _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _sender_endpoint;
-        char _buffer[512];
+        char _buffer[8192];
                 
         //mob
         std::string _prgm_name;
@@ -46,6 +46,8 @@ namespace mob
         std::map<std::string, void*> _allocated_mem;
         
         boost::signals2::signal<void(size_t,std::string)> _sig_remote_get;
+        
+        std::mutex _shared_mem_write;
         
     public:
         root();

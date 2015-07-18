@@ -14,19 +14,17 @@ int main(int argc, char* argv[])
     
     //TODO: specify types like float4 and allow indicating in/out for data
     //      also hepers for converting C-style arrays to gmem arrays
-    mob::gmem<float> a("a", mob, 4);
-    a.init(0, 0.0f);
-    a.init(1, 1.0f);
-    a.init(2, 2.0f);
-    a.init(3, 3.0f);
+    mob::gmem<float> a("a", mob, 400);
+    for(size_t i=0; i<400; i++){
+        a.init(i, (float)i);
+    }
     
-    mob::gmem<float> b("b", mob, 4);
-    b.init(0, 0.0f);
-    b.init(1, 1.0f);
-    b.init(2, 2.0f);
-    b.init(3, 3.0f);    
+    mob::gmem<float> b("b", mob, 400);
+    for(size_t i=0; i<400; i++){
+        b.init(i, (float)i);
+    }    
     
-    mob::gmem<float> c("c", mob, 4);
+    mob::gmem<float> c("c", mob, 400);
     
     mob::kernel test("test", [&a, &b, &c](size_t global_index){
         

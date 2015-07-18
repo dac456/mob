@@ -61,7 +61,7 @@ namespace MobNode
         asio::io_service* _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _senderEndpoint;
-        char _buffer[1024];
+        char _buffer[8192];
         
         //Node
         std::map<std::string, bool> _nodeMap;

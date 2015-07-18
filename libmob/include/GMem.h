@@ -67,7 +67,6 @@ namespace mob
         
         void init(size_t idx, T val){
             //Update local memory
-            std::cout << "init hang1 " << _mob_root->get_name().c_str() << std::endl;
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
             std::pair<T*, bip::managed_shared_memory::size_type> res;
             

@@ -315,12 +315,17 @@ namespace MobNode
                 msgOut.set_data(msgStream.str().c_str(), msgStream.str().size());
                 std::pair<char*, size_t> msgPair = msgOut.encode();
                 
-                asio::ip::udp::resolver resolver(*_service);
-                asio::ip::udp::resolver::query query(asio::ip::udp::v4(), node.first, boost::lexical_cast<std::string>(9001));
-                asio::ip::udp::endpoint ep = *resolver.resolve(query);
-                
-                _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                  
-                delete[] msgPair.first; 
+                if(node.first != asio::ip::host_name()){
+                    asio::ip::udp::resolver resolver(*_service);
+                    asio::ip::udp::resolver::query query(asio::ip::udp::v4(), node.first, boost::lexical_cast<std::string>(NODE_PORT));
+                    asio::ip::udp::endpoint ep = *resolver.resolve(query);
+                    
+                    _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                  
+                    delete[] msgPair.first; 
+                }
+                else{
+                    _handleMsgSetTasks(msgOut);
+                }
                 
                 nodeIdx++;
             }

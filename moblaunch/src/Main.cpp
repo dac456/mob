@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
     
     prgm_data data;
     data.prgm_name = prgmName;
-    data.num_tasks = 4; //TODO: don't hardcode
+    data.num_tasks = 400; //TODO: don't hardcode
     
     std::stringstream dataStream;
     boost::archive::text_oarchive oa(dataStream);

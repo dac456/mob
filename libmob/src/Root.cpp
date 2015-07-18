@@ -277,8 +277,7 @@ namespace mob
                 gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
                 mem->fetch();
                 
-                while(mem->dirty());
-                usleep(500000); //latency in memory propigation? this is a kludge either way
+                usleep(250000); //latency in memory propagation? this is a kludge either way
                 
                 _host_get_mem(data);
             });                  
