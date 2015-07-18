@@ -396,7 +396,7 @@ namespace MobNode
         prgm_data mem;
         ia >> mem;
         
-        if(_programMap.find(mem.prgm_name) == _programMap.end() || _programMap.at(mem.prgm_name).started == false){
+        if(_programMap.find(mem.prgm_name) == _programMap.end()){
             //Start named process
             std::vector<std::string> args;
             args.push_back(mem.prgm_name); 
