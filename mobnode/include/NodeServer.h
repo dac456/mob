@@ -94,6 +94,7 @@ namespace MobNode
         void _handleMsgSetTasks(mob::node_message& msg);
         void _handleMsgPrgmStarted(mob::node_message& msg);
         void _handleMsgPrgmRegKernel(mob::node_message& msg);
+        void _handleMsgKernelStarted(mob::node_message& msg);
         void _handleMsgKernelFinished(mob::node_message& msg);
     };
 

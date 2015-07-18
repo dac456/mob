@@ -76,7 +76,7 @@ struct prgm_var_data{
     }    
 };
 
-struct kernel_finished_data{
+struct kernel_status_data{
     std::string host_name;
     std::string prgm_name;
     std::string kernel_name;

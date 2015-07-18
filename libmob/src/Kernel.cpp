@@ -20,6 +20,8 @@ namespace mob
             TaskList* mem = segment.find<TaskList>("task_list").first;            
             
             while(mem->empty());
+            mob_root._kernel_started(_name);
+            
             std::cout << "got " << mem->size() << " tasks" << std::endl;
             TaskList::const_iterator it;
             for(it = mem->cbegin(); it != mem->cend(); it++){

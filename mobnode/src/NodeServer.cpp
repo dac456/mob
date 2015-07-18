@@ -78,6 +78,10 @@ namespace MobNode
                     _handleMsgPrgmRegKernel(msg);
                     break;
                     
+                case mob::KERNEL_STARTED:
+                    _handleMsgKernelStarted(msg);
+                    break;
+                    
                 case mob::KERNEL_FINISHED:
                     _handleMsgKernelFinished(msg);
                     break;
@@ -139,6 +143,8 @@ namespace MobNode
         msg->decode_body(msg->body_buffer());
         
         _handleMsgSetTasks(*msg);
+        
+        delete msg;
     }
     
     
@@ -527,13 +533,27 @@ namespace MobNode
         _programMap[data.prgm_name].kernel_status_on_node[std::make_pair(data.host_name, data.kernel_name)] = false;        
     }
     
+    void NodeServer::_handleMsgKernelStarted(mob::node_message& msg){
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        kernel_status_data data;
+        ia >> data;        
+        
+        //Update kernel running status
+        _programMap[data.prgm_name].kernel_status_on_node[std::make_pair(data.host_name, data.kernel_name)] = data.status;
+        std::cout << "kernel on " << data.host_name << " started" << std::endl;         
+    }
+    
     void NodeServer::_handleMsgKernelFinished(mob::node_message& msg){
         //Decode message
         std::stringstream msgStream;
         msgStream << msg.get_data();
         
         boost::archive::text_iarchive ia(msgStream);
-        kernel_finished_data data;
+        kernel_status_data data;
         ia >> data;
         
         //Update kernel running status
@@ -566,7 +586,7 @@ namespace MobNode
                 
                 mob::node_message msgOut(mob::KERNEL_FINISHED);
                 
-                kernel_finished_data data_out;
+                kernel_status_data data_out;
                 data_out.host_name = asio::ip::host_name();
                 data_out.prgm_name = data.prgm_name;
                 data_out.kernel_name = data.kernel_name;

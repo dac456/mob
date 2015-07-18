@@ -376,6 +376,40 @@ namespace mob
         }           
     }
     
+    void root::_kernel_started(std::string kernel){
+        boost::system::error_code error;
+        asio::ip::udp::socket broad_socket(_service);
+        broad_socket.open(asio::ip::udp::v4(), error);
+        if(!error){
+            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            broad_socket.set_option(asio::socket_base::broadcast(true));
+            
+            node_message msg(KERNEL_STARTED);
+            
+            kernel_status_data data;
+            data.host_name = asio::ip::host_name();
+            data.prgm_name = _prgm_name;
+            data.kernel_name = kernel;
+            data.status = false;
+            
+            std::stringstream msg_stream;
+            boost::archive::text_oarchive oa(msg_stream);
+            oa << data;
+                        
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            std::pair<char*, size_t> msg_pair = msg.encode();
+            
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
+            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
+            broad_socket.close(error);
+            
+            delete[] msg_pair.first;
+        }
+        else{
+            std::cout << "broadcast error" << std::endl;
+        }        
+    }
+    
     void root::_kernel_finished(std::string kernel){
         boost::system::error_code error;
         asio::ip::udp::socket broad_socket(_service);
@@ -386,7 +420,7 @@ namespace mob
             
             node_message msg(KERNEL_FINISHED);
             
-            kernel_finished_data data;
+            kernel_status_data data;
             data.host_name = asio::ip::host_name();
             data.prgm_name = _prgm_name;
             data.kernel_name = kernel;

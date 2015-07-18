@@ -153,7 +153,7 @@ namespace mob
         msg_stream << msg.get_data();
         
         boost::archive::text_iarchive ia(msg_stream);
-        kernel_finished_data data;
+        kernel_status_data data;
         ia >> data;
         
         //Update status

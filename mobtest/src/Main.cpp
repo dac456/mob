@@ -25,10 +25,13 @@ int main(int argc, char* argv[])
     }    
     
     mob::gmem<float> c("c", mob, 400);
+    for(size_t i=0; i<400; i++){
+        b.init(i, 0.0f);
+    }      
     
     mob::kernel test("test", [&a, &b, &c](size_t global_index){
         
-        c.set(global_index, a[global_index] + b[global_index]);
+        c.set(global_index, (a[global_index] + b[global_index]) + c[global_index]);
         //std::cout << c[global_index] << std::endl;   
         /*std::ofstream fout;
         fout.open("/home/dcook/out.txt", std::ios::app);

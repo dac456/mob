@@ -22,6 +22,7 @@ namespace mob
         HOST_EXEC_KERNEL,    //trigger kernel exec on all nodes in a given program
         HOST_GET_MEM,        //get memory contents of a named gmem object in a program
         HOST_SET_MEM,        //set memory contents of a named gmem object in a program
+        KERNEL_STARTED,
         KERNEL_FINISHED,
     } MSG_TYPE;
     

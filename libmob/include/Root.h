@@ -76,6 +76,7 @@ namespace mob
         void _host_get_mem(prgm_var_data data);
         void _prgm_send_mem(node_message& msg);
         void _prgm_get_mem(node_message& msg);
+        void _kernel_started(std::string kernel);
         void _kernel_finished(std::string kernel);
         
         typedef boost::signals2::signal<void(size_t,std::string)>::slot_type remote_get_event;
