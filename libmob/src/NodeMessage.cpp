@@ -86,7 +86,6 @@ namespace mob
             char header[5] = "";
             strncat(header, buffer + 1, 4);
             _header.bodySize = atoi(header);
-            std::cout << _header.bodySize << std::endl;
             idx += 4;
             
             //Body
