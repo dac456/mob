@@ -53,15 +53,17 @@ namespace mob
     
     std::pair<char*, size_t> node_message::encode(){
         size_t bufLen = _header.bodySize + 1 + sizeof(size_t)*2;
-        std::cout << "buflen " << bufLen << " " << _header.bodySize << std::endl;
         char* buf = new char[bufLen];
         //char buf[bufLen];
         
         buf[0] = _header.msgType;
         
-        memcpy(&buf[1], reinterpret_cast<char*>(&_header.bodySize), sizeof(size_t));
-        memcpy(&buf[1 + sizeof(size_t)], _body.body, _header.bodySize);
-        memcpy(&buf[1 + sizeof(size_t) + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
+        //memcpy(&buf[1], reinterpret_cast<char*>(&_header.bodySize), sizeof(size_t));
+        char header[5] = "";
+        sprintf(header, "%4d", (int)_header.bodySize);
+        memcpy(&buf[1], header, 4);
+        memcpy(&buf[1 + 4], _body.body, _header.bodySize);
+        memcpy(&buf[1 + 4 + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
         
         _is_valid = true; 
         return std::make_pair(buf, bufLen);
@@ -74,13 +76,18 @@ namespace mob
             size_t idx = 1;
             
             //Size of body (in bytes)
-            size_t s = 0;
+            /*size_t s = 0;
             for(size_t i=idx; i<sizeof(size_t) + idx; i++){
                 s += static_cast<size_t>(buffer[i]) << (i - idx)*8;
             }
             _header.bodySize = s;       
             
-            idx += sizeof(size_t);
+            idx += sizeof(size_t);*/
+            char header[5] = "";
+            strncat(header, buffer + 1, 4);
+            _header.bodySize = atoi(header);
+            std::cout << _header.bodySize << std::endl;
+            idx += 4;
             
             //Body
             size_t sum = 0;
@@ -107,6 +114,65 @@ namespace mob
             //    std::cout << "invalid checksum" << std::endl;
             //}           
         }
+    }
+    
+    void node_message::decode_header(char* buffer){
+        if(buffer != nullptr){
+            //Message type
+            _header.msgType = buffer[0];
+            size_t idx = 1;
+            
+            //Size of body (in bytes)
+            /*size_t s = 0;
+            for(size_t i=idx; i<sizeof(size_t) + idx; i++){
+                s += static_cast<size_t>(buffer[i]) << ((i - idx)*8);
+            }
+            _header.bodySize = s;*/
+            char header[5] = "";
+            strncat(header, buffer + 1, 4);
+            _header.bodySize = atoi(header);
+            //idx += 4;            
+        }        
+    }
+    
+    void node_message::decode_body(char* buffer){
+        if(buffer != nullptr){
+            //size_t idx = 1 + sizeof(size_t);
+            size_t idx = 0;
+            
+            //Body
+            size_t sum = 0;
+            _body.body = new char[_header.bodySize];
+            for(size_t i=idx; i<_header.bodySize + idx; i++){
+                _body.body[i - idx] = buffer[i];
+                sum += static_cast<size_t>(_body.body[i - idx]);
+            }
+            
+            idx += _header.bodySize;
+            
+            //Body checksum
+            size_t checksum = 0;
+            for(size_t i=idx; i<sizeof(size_t) + idx; i++){
+                checksum += static_cast<size_t>(buffer[i]) << (i - idx)*8;
+            }
+            
+            //if(checksum == sum){
+                _is_valid = true;
+                _body.checksum = checksum;
+            //}
+            //else{
+            //    _is_valid = false;
+            //    std::cout << "invalid checksum" << std::endl;
+            //} 
+        }         
+    }
+    
+    char* node_message::buffer(){
+        return _buffer;
+    }
+    
+    char* node_message::body_buffer(){
+        return _buffer + (4 + 1);
     }
     
     bool node_message::is_valid(){

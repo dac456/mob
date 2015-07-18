@@ -61,6 +61,7 @@ namespace MobNode
         asio::io_service* _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _senderEndpoint;
+        asio::ip::tcp::acceptor _acceptor_tcp;
         char _buffer[8192];
         
         //Node
@@ -77,6 +78,12 @@ namespace MobNode
         void _startAccept();
         void _handleReceive(const boost::system::error_code& err, const size_t bytesReceived);
         void _handleSend(const boost::system::error_code& err, const size_t bytesSent);
+        
+        void _startAcceptTcp();
+        void _handleTcpReadHeader(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived);
+        void _handleTcpAccept(std::shared_ptr<NodeConnection> conn, const boost::system::error_code& err);
+        
+        void _handleTcpReadBodySetTasks(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived);
         
         void _handleMsgPing(mob::node_message& msg);
         void _handleMsgPingLib(mob::node_message& msg);

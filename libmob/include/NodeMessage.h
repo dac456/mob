@@ -43,6 +43,8 @@ namespace mob
         
         bool _is_valid;
         
+        char _buffer[sizeof(size_t) + 1 + 8192];
+        
     public:
         node_message();
         node_message(MSG_TYPE type);
@@ -57,6 +59,12 @@ namespace mob
         
         std::pair<char*, size_t> encode();
         void decode(char* buffer);
+        
+        void decode_header(char* buffer);
+        void decode_body(char* buffer);
+        
+        char* buffer();
+        char* body_buffer();
         
         bool is_valid();
     };
