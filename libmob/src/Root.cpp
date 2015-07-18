@@ -90,7 +90,9 @@ namespace mob
         
         //Start an async server so we can talk to the network
         _start_accept();
-        boost::thread srv(boost::bind(&asio::io_service::run, &_service));
+        for(size_t i=0; i<10; i++){
+            boost::thread srv(boost::bind(&asio::io_service::run, &_service));
+        }
     }
 
     void root::mob_kill(){
@@ -220,7 +222,7 @@ namespace mob
         (*(val+mem.idx)) = atof(mem.val.c_str());     
         
         //Signal gmem that the data is updated
-        _sig_remote_get(mem.idx);   
+        _sig_remote_get(mem.idx, mem.var_name);   
     }
     
     void root::_handle_host_exec_kernel(node_message& msg){
@@ -270,45 +272,67 @@ namespace mob
         ia >> data;
         
         if(data.prgm_name == _prgm_name){
-            //Get shared local memory
-            bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
-            std::pair<float*, bip::managed_shared_memory::size_type> res;
-            
-            res = segment.find<float>(data.var_name.c_str());
-            float* val = res.first;
-            
-            std::vector<float> out_vec(val, val + res.second);
-            data.var = out_vec; 
-                       
-            //Ping back
-            std::cout << "ping back to " << data.host_name << std::endl;
-            node_message msg_out(HOST_GET_MEM);
-            
-            std::stringstream msg_stream_out;
-            boost::archive::text_oarchive oa(msg_stream_out);
-            oa << data;
-            
-            std::cout << "hang0" << std::endl;              
-            
-            msg_out.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
-            std::cout << "hang0a " << msg_stream_out.str().size() << std::endl;  
-            std::pair<char*, size_t> msgPair = msg_out.encode();
-            
-            std::cout << "hang1" << std::endl;
-            
-            asio::ip::udp::resolver resolver(_service);
-            asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
-            asio::ip::udp::endpoint ep = *resolver.resolve(query);
-            
-            std::cout << "hang2" << std::endl;
-            
-            //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
-            std::cout << "send to " << data.host_name << std::endl;
-            _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
-            std::cout << "sent" << std::endl;   
-            
-            delete[] msgPair.first;            
+            boost::thread fetch_mem([=](){
+                //Fetch from remote
+                gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
+                mem->fetch();
+                
+                while(mem->dirty());
+                usleep(500000); //latency in memory propigation? this is a kludge either way
+                
+                _host_get_mem(data);
+            });                  
         }       
+    }
+    
+    void root::_host_get_mem(prgm_var_data data){
+        //Get shared local memory
+        bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
+        std::pair<float*, bip::managed_shared_memory::size_type> res;
+        
+        res = segment.find<float>(data.var_name.c_str());
+        float* val = res.first;
+        
+        std::vector<float> out_vec(val, val + res.second);
+        
+        prgm_var_data data_out;
+        data_out.host_name = asio::ip::host_name();
+        data_out.prgm_name = data.prgm_name;
+        data_out.var_name = data.var_name;
+        data_out.var = out_vec;
+        for(size_t i=0; i<data_out.var.size(); i++){
+            std::cout << data_out.var[i] << " ";
+        }
+        std::cout << std::endl;
+                   
+        //Ping back
+        std::cout << "ping back to " << data_out.host_name << std::endl;
+        node_message msg_out(HOST_GET_MEM);
+        
+        std::stringstream msg_stream_out;
+        boost::archive::text_oarchive oa(msg_stream_out);
+        oa << data_out;
+        
+        std::cout << "hang0" << std::endl;              
+        
+        msg_out.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
+        std::cout << "hang0a " << msg_stream_out.str().size() << std::endl;  
+        std::pair<char*, size_t> msgPair = msg_out.encode();
+        
+        std::cout << "hang1" << std::endl;
+        
+        asio::ip::udp::resolver resolver(_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
+        asio::ip::udp::endpoint ep = *resolver.resolve(query);
+        
+        std::cout << "hang2" << std::endl;
+        
+        //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+        std::cout << "send to " << data.host_name << std::endl;
+        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+        std::cout << "sent" << std::endl;   
+        
+        delete[] msgPair.first;        
     }
     
     void root::_prgm_send_mem(node_message& msg){

@@ -44,17 +44,21 @@ namespace mob
         std::pair<size_t, bool> _waiting_for_remote;
         boost::signals2::connection _remote_get;
         
+        bool _dirty;
+        
     public:
         gmem(std::string name, root& mob_root, const size_t sz) : _sz(sz){
             _name = name;
+            _dirty = true;
             
             //Create shared region
             bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());
             segment.find_or_construct<T>(name.c_str())[sz](0);
             
             _mob_root = &mob_root;
+            _mob_root->_allocated_mem[name] = this;
 
-            _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1));
+            _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1, _2));
         }
         
         ~gmem(){
@@ -92,9 +96,29 @@ namespace mob
             TaskList* task_list = segment.find<TaskList>("task_list").first;  
             
             //TODO: always send to make data capture easier. in practice should not do this
-            //if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
+            if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
                 _send_mem(_name, val, idx);
-            //}
+            }
+        }
+        
+        void fetch(){
+            if(_dirty){
+                std::cout << "gmem fetch" << std::endl;
+                for(size_t i=0; i<_sz; i++){    
+                    bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
+                    TaskList* task_list = segment.find<TaskList>("task_list").first;  
+                    
+                    if(std::find(task_list->begin(), task_list->end(), i) == task_list->end()){
+                        _waiting_for_remote = std::make_pair(i, true);
+                        
+                        std::cout << "fetch _get_mem " << i << std::endl;
+                        float x = _get_mem(_name, i);
+                        std::cout << x << std::endl;
+                    }
+                }
+                
+                _dirty = false;
+            }
         }
         
         size_t size(){
@@ -105,14 +129,17 @@ namespace mob
             return _name;
         }
         
+        bool dirty(){
+            return _dirty;
+        }
+        
         const T operator[] (const int idx){
             assert(idx >= 0 && idx < _sz);
             try{
-                bip::managed_shared_memory segment(bip::open_only, "mobtest");    
+                bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
                 TaskList* task_list = segment.find<TaskList>("task_list").first;  
                 
                 if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
-                    //bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
                     std::pair<T*, bip::managed_shared_memory::size_type> res;
                     
                     res = segment.find<T>(_name.c_str());
@@ -131,9 +158,9 @@ namespace mob
             }            
         }
         
-        void remote_get_notify(size_t task_idx){
+        void remote_get_notify(size_t task_idx, std::string var_name){
             //If this is the droid we're searching for...
-            if(_waiting_for_remote.first == task_idx){
+            if(_waiting_for_remote.first == task_idx && var_name == _name){
                 _waiting_for_remote.second = false;
             }
         }

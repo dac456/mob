@@ -24,6 +24,10 @@
     #endif
 #endif
 
+#ifdef MOB_PLATFORM_GNU
+#include <unistd.h>
+#endif
+
 namespace mob
 {
     template<typename T> class gmem;

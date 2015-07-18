@@ -43,8 +43,9 @@ namespace mob
         bool _waiting_for_tasks;
         
         std::map<std::string, kernel*> _kernel_map;
+        std::map<std::string, void*> _allocated_mem;
         
-        boost::signals2::signal<void(size_t)> _sig_remote_get;
+        boost::signals2::signal<void(size_t,std::string)> _sig_remote_get;
         
     public:
         root();
@@ -70,11 +71,12 @@ namespace mob
         void _handle_host_exec_kernel(node_message& msg);
         void _handle_host_get_mem(node_message& msg);
         
+        void _host_get_mem(prgm_var_data data);
         void _prgm_send_mem(node_message& msg);
         void _prgm_get_mem(node_message& msg);
         void _kernel_finished(std::string kernel);
         
-        typedef boost::signals2::signal<void(size_t)>::slot_type remote_get_event;
+        typedef boost::signals2::signal<void(size_t,std::string)>::slot_type remote_get_event;
         boost::signals2::connection _connect_remote_get(const remote_get_event& e);
         
         friend class kernel;
