@@ -60,10 +60,10 @@ namespace mob
         
         //memcpy(&buf[1], reinterpret_cast<char*>(&_header.bodySize), sizeof(size_t));
         char header[5] = "";
-        sprintf(header, "%4d", (int)_header.bodySize);
-        memcpy(&buf[1], header, 4);
-        memcpy(&buf[1 + 4], _body.body, _header.bodySize);
-        memcpy(&buf[1 + 4 + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
+        sprintf(header, "%6d", (int)_header.bodySize);
+        memcpy(&buf[1], header, 6);
+        memcpy(&buf[1 + 6], _body.body, _header.bodySize);
+        memcpy(&buf[1 + 6 + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
         
         _is_valid = true; 
         return std::make_pair(buf, bufLen);
@@ -83,10 +83,10 @@ namespace mob
             _header.bodySize = s;       
             
             idx += sizeof(size_t);*/
-            char header[5] = "";
-            strncat(header, buffer + 1, 4);
+            char header[7] = "";
+            strncat(header, buffer + 1, 6);
             _header.bodySize = atoi(header);
-            idx += 4;
+            idx += 6;
             
             //Body
             size_t sum = 0;
@@ -127,8 +127,8 @@ namespace mob
                 s += static_cast<size_t>(buffer[i]) << ((i - idx)*8);
             }
             _header.bodySize = s;*/
-            char header[5] = "";
-            strncat(header, buffer + 1, 4);
+            char header[7] = "";
+            strncat(header, buffer + 1, 6);
             _header.bodySize = atoi(header);
             //idx += 4;            
         }        
@@ -171,7 +171,7 @@ namespace mob
     }
     
     char* node_message::body_buffer(){
-        return _buffer + (4 + 1);
+        return _buffer + (6 + 1);
     }
     
     bool node_message::is_valid(){

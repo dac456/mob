@@ -102,7 +102,6 @@ namespace mob
         
         void fetch(){
             if(_dirty){
-                std::cout << "gmem fetch" << std::endl;
                 for(size_t i=0; i<_sz; i++){    
                     bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
                     TaskList* task_list = segment.find<TaskList>("task_list").first;  
@@ -110,7 +109,6 @@ namespace mob
                     if(std::find(task_list->begin(), task_list->end(), i) == task_list->end()){
                         _waiting_for_remote = std::make_pair(i, true);
                         
-                        std::cout << "fetch _get_mem " << i << std::endl;
                         auto x = _get_mem(_name, i);
                     }
                 }
@@ -213,7 +211,6 @@ namespace mob
             else{
                 std::cout << "gmem: unknown typeid" << std::endl;
             }
-            std::cout << "_get_mem " << msg_data.val_type << std::endl;
               
             std::stringstream msg_stream;
             boost::archive::text_oarchive oa(msg_stream);

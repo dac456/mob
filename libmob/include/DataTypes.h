@@ -24,7 +24,7 @@ namespace mob
             ss >> w;
         }
         
-        std::string str(){
+        const std::string str() const{
             std::stringstream ss;
             ss << x << " " << y << " " << z << " " << w;
             return ss.str();
@@ -46,6 +46,10 @@ namespace mob
         
         inline float4 operator-(const float4& rhs) const{
             return float4(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w);
+        }
+        
+        inline float4 operator*(const float rhs) const{
+            return float4(x*rhs, y*rhs, z*rhs, w*rhs);
         }
         
         template<typename Archive>

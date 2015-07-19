@@ -44,7 +44,7 @@ namespace mob
         
         bool _is_valid;
         
-        char _buffer[sizeof(size_t) + 1 + 8192];
+        char _buffer[sizeof(size_t) + 1 + (1024*1024)];
         
     public:
         node_message();

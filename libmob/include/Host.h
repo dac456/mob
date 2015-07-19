@@ -14,7 +14,7 @@ namespace mob
         asio::io_service _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _sender_endpoint;
-        char _buffer[8192];
+        char _buffer[1024*1024];
        
         //mob
         std::string _first_host;

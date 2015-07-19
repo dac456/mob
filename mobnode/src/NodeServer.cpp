@@ -132,7 +132,7 @@ namespace MobNode
         if(!err){
             mob::node_message* msg = new mob::node_message();
             
-            asio::async_read(conn->getSocket(), asio::buffer(msg->buffer(), 4+1), boost::bind(&NodeServer::_handleTcpReadHeader, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));
+            asio::async_read(conn->getSocket(), asio::buffer(msg->buffer(), 6+1), boost::bind(&NodeServer::_handleTcpReadHeader, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));
             _startAcceptTcp();
         }
     }
@@ -513,7 +513,6 @@ namespace MobNode
             mem->clear();
             std::cout << "task list size " << data.task_list.size() << std::endl;
             for(size_t i=0; i<data.task_list.size(); i++){
-                std::cout << i << std::endl;
                 mem->push_back(data.task_list[i]);
             }
         });

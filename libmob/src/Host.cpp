@@ -160,6 +160,8 @@ namespace mob
     void host::_handle_get_mem(node_message& msg){
         std::cout << "handle_get_mem" << std::endl;
         
+        std::cout << msg.get_header().bodySize << std::endl;
+        
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();

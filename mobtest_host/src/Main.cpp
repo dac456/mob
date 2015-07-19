@@ -8,12 +8,11 @@ int main(int argc, char* argv[])
     mob::host host;
     
     for(;;){
-        host.launch("mobtest", "test");
-        host.wait("mobtest", "test");
+        host.launch("mobtest", "integrate_forces");
+        host.wait("mobtest", "integrate_forces");
     
-        //std::vector<float> result = host.capture<float>("mobtest", "c");
         std::vector<mob::float4> result;
-        result = host.capture_float4("mobtest", "c");
+        result = host.capture_float4("mobtest", "p");
         
         for(size_t i=0; i<result.size(); i++){
             std::cout << result[i].str() << std::endl;
