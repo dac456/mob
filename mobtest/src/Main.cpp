@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
     std::cout << "starting mobtest..." << std::endl;
 
     mob::root mob;
-    mob.mob_init(argc, argv);
+    mob.init(argc, argv);
     std::cout << "initialized" << std::endl;
     
     
@@ -34,31 +34,16 @@ int main(int argc, char* argv[])
     mob::kernel test("test", [&a, &b, &c](size_t global_index){
         
         c.set(global_index, (a[global_index] + b[global_index]) + c[global_index]);
-        //std::cout << c[global_index] << std::endl;   
-        /*std::ofstream fout;
-        fout.open("/home/dcook/out.txt", std::ios::app);
-        fout << c[global_index] << std::endl;
-        fout.close(); */    
-        
+
     });
     
     mob.add_kernel(test);
-    //mob.exec_kernel("test");
     
-    //std::cout << "enter 'q' to quit... " << std::endl;
-    for(;;){
-        /*for(size_t i=0; i<4; i++){
-            std::cout << c[i] << std::endl;
-        }
-        if(std::cin.get() == 'q'){
-            break;
-        }*/
-    }
-    
-    //mob::gfree(diff);
+    mob.run();
+
     
     std::cout << "killing mobtest..." << std::endl;
-    mob.mob_kill();
+    mob.kill();
 
     return 0;
 }

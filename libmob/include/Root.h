@@ -53,8 +53,9 @@ namespace mob
         root();
         ~root();
         
-        void mob_init(int argc, char* argv[]);
-        void mob_kill();
+        void init(int argc, char* argv[]);
+        void kill();
+        void run();
         
         void add_kernel(kernel& kern); //TODO: figure out why this hangs without '&'
         void exec_kernel(std::string name);

@@ -15,7 +15,7 @@ namespace mob
         
     }
     
-    void root::mob_init(int argc, char* argv[]){
+    void root::init(int argc, char* argv[]){
         _prgm_name = argv[0];
         std::cout << _prgm_name << std::endl;
         
@@ -95,9 +95,15 @@ namespace mob
         }
     }
 
-    void root::mob_kill(){
+    void root::kill(){
         _socket.close();
         bip::shared_memory_object::remove(_prgm_name.c_str());
+    }
+    
+    void root::run(){
+        for(;;){
+            //TODO: poll for kill signal
+        }
     }
     
     void root::add_kernel(kernel& kern){
