@@ -7,6 +7,7 @@ namespace mob
     struct float4{
         float x, y, z, w;
         
+        //Constructors and utilities
         float4(){}
         float4(float _x, float _y, float _z, float _w){
             x = _x;
@@ -29,8 +30,22 @@ namespace mob
             return ss.str();
         }
         
+        //Math helpers
+        float length(){
+            return sqrtf((x*x) + (y*y) + (z*z) + (w*w));
+        }
+        
+        float dot(const float4& rhs){
+            return (x*rhs.x) + (y*rhs.y) + (z*rhs.z) + (w*rhs.w);
+        }
+        
+        //Operators
         inline float4 operator+(const float4& rhs) const{
             return float4(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w);
+        }
+        
+        inline float4 operator-(const float4& rhs) const{
+            return float4(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w);
         }
         
         template<typename Archive>
