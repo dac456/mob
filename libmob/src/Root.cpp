@@ -197,6 +197,10 @@ namespace mob
         _start_accept();        
     }
     
+    void root::_handle_send(const boost::system::error_code& err, const size_t bytesSent){
+        
+    }
+    
     /*void root::_handle_node_ping_lib(node_message& msg){
         std::cout << std::string(msg.get_data()) << std::endl;
         _node_map[std::string(msg.get_data())] = true;
@@ -214,12 +218,18 @@ namespace mob
         
         //Set shared local memory
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
-        std::pair<float*, bip::managed_shared_memory::size_type> res;
-        
-        res = segment.find<float>(mem.var_name.c_str());
-        float* val = res.first;
-
-        (*(val+mem.idx)) = atof(mem.val.c_str());     
+        if(mem.val_type == "float"){  
+            auto res = segment.find<float>(mem.var_name.c_str());
+            float* val = res.first;
+    
+            (*(val+mem.idx)) = atof(mem.val.c_str());  
+        }
+        else if(mem.val_type == "float4"){
+            auto res = segment.find<float4>(mem.var_name.c_str());
+            float4* val = res.first;
+    
+            (*(val+mem.idx)) = float4(mem.val);             
+        }   
         
         //Signal gmem that the data is updated
         _sig_remote_get(mem.idx, mem.var_name);   
@@ -274,8 +284,14 @@ namespace mob
         if(data.prgm_name == _prgm_name){
             boost::thread fetch_mem([=](){
                 //Fetch from remote
-                gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
-                mem->fetch();
+                if(data.var_type == "float"){
+                    gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
+                    mem->fetch();
+                }
+                else if(data.var_type == "float4"){
+                    gmem<float4>* mem = (gmem<float4>*)_allocated_mem.at(data.var_name);
+                    mem->fetch();                    
+                }
                 
                 usleep(250000); //latency in memory propagation? this is a kludge either way
                 
@@ -287,49 +303,47 @@ namespace mob
     void root::_host_get_mem(prgm_var_data data){
         //Get shared local memory
         bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
-        std::pair<float*, bip::managed_shared_memory::size_type> res;
-        
-        res = segment.find<float>(data.var_name.c_str());
-        float* val = res.first;
-        
-        std::vector<float> out_vec(val, val + res.second);
         
         prgm_var_data data_out;
+        
+        if(data.var_type == "float"){
+            auto res = segment.find<float>(data.var_name.c_str());
+            float* val = res.first;
+            
+            std::vector<float> out_vec(val, val + res.second);
+            data_out.var_float = out_vec;
+            data_out.var_type = "float";
+        }
+        else if(data.var_type == "float4"){
+            auto res = segment.find<float4>(data.var_name.c_str());
+            float4* val = res.first;
+            
+            std::vector<float4> out_vec(val, val + res.second);
+            data_out.var_float4 = out_vec;
+            data_out.var_type = "float4";            
+        }
+        
+        
         data_out.host_name = asio::ip::host_name();
         data_out.prgm_name = data.prgm_name;
         data_out.var_name = data.var_name;
-        data_out.var = out_vec;
-        for(size_t i=0; i<data_out.var.size(); i++){
-            std::cout << data_out.var[i] << " ";
-        }
-        std::cout << std::endl;
                    
         //Ping back
-        std::cout << "ping back to " << data_out.host_name << std::endl;
         node_message msg_out(HOST_GET_MEM);
         
         std::stringstream msg_stream_out;
         boost::archive::text_oarchive oa(msg_stream_out);
         oa << data_out;
-        
-        std::cout << "hang0" << std::endl;              
-        
+                
         msg_out.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
-        std::cout << "hang0a " << msg_stream_out.str().size() << std::endl;  
         std::pair<char*, size_t> msgPair = msg_out.encode();
-        
-        std::cout << "hang1" << std::endl;
         
         asio::ip::udp::resolver resolver(_service);
         asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
         asio::ip::udp::endpoint ep = *resolver.resolve(query);
         
-        std::cout << "hang2" << std::endl;
-        
-        //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
-        std::cout << "send to " << data.host_name << std::endl;
-        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
-        std::cout << "sent" << std::endl;   
+        _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+        //_socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
         
         delete[] msgPair.first;        
     }

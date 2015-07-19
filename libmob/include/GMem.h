@@ -4,6 +4,7 @@
 #include "MobCommon.h"
 #include "NodeMessage.h"
 #include "Root.h"
+#include "DataTypes.h"
 
 namespace mob
 {
@@ -53,7 +54,7 @@ namespace mob
             
             //Create shared region
             bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());
-            segment.find_or_construct<T>(name.c_str())[sz](0);
+            segment.find_or_construct<T>(name.c_str())[sz]();
             
             _mob_root = &mob_root;
             _mob_root->_allocated_mem[name] = this;
@@ -82,7 +83,6 @@ namespace mob
             //      -> broadcast from each node each time task assignment is updated?
             
             //Update local memory
-            std::cout << "set hang1 " << _mob_root->get_name().c_str() << std::endl;
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
             std::pair<T*, bip::managed_shared_memory::size_type> res;
             
@@ -111,8 +111,7 @@ namespace mob
                         _waiting_for_remote = std::make_pair(i, true);
                         
                         std::cout << "fetch _get_mem " << i << std::endl;
-                        float x = _get_mem(_name, i);
-                        std::cout << x << std::endl;
+                        auto x = _get_mem(_name, i);
                     }
                 }
                 
@@ -165,6 +164,17 @@ namespace mob
         }
         
     private:
+        void _set_data(float val, set_mem& data){
+            data.val_type = "float";
+            std::stringstream val_str;
+            val_str << val;
+            data.val = val_str.str();             
+        }
+        void _set_data(float4 val, set_mem& data){
+            data.val_type = "float4";
+            data.val = val.str();            
+        }
+        
         void _send_mem(std::string var_name, T val, size_t task_idx){
             node_message msg(PRGM_SET_MEM);
             
@@ -172,11 +182,8 @@ namespace mob
             msg_data.prgm_name = _mob_root->get_name();
             msg_data.var_name = var_name;
             msg_data.idx = task_idx;
-            msg_data.val_type = std::string(typeid(val).name());
-            
-            std::stringstream val_str;
-            val_str << val;
-            msg_data.val = val_str.str();
+
+            _set_data(val, msg_data);
                 
             std::stringstream msg_stream;
             boost::archive::text_oarchive oa(msg_stream);
@@ -196,7 +203,17 @@ namespace mob
             msg_data.prgm_name = _mob_root->get_name();
             msg_data.var_name = var_name;
             msg_data.idx = task_idx;
-            msg_data.val_type = std::string(typeid(T).name());
+            
+            if(typeid(T) == typeid(float)){
+                msg_data.val_type = "float";
+            }
+            else if(typeid(T) == typeid(float4)){
+                msg_data.val_type = "float4";
+            }
+            else{
+                std::cout << "gmem: unknown typeid" << std::endl;
+            }
+            std::cout << "_get_mem " << msg_data.val_type << std::endl;
               
             std::stringstream msg_stream;
             boost::archive::text_oarchive oa(msg_stream);

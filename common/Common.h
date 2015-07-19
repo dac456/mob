@@ -45,7 +45,9 @@ namespace proc = boost::process;
 #define HOST_PORT 9004
 
 typedef bip::allocator<size_t, bip::managed_shared_memory::segment_manager> ShmemAllocator;
-typedef std::vector<size_t, ShmemAllocator> TaskList;   
+typedef std::vector<size_t, ShmemAllocator> TaskList;
+
+#include "DataTypes.h"
 
 struct prgm_kernel_data{
     std::string host_name;
@@ -64,15 +66,19 @@ struct prgm_var_data{
     std::string host_name;
     std::string prgm_name;
     std::string var_name;
+    std::string var_type;
     
-    std::vector<float> var;
+    std::vector<float> var_float;
+    std::vector<mob::float4> var_float4;
     
     template<typename Archive>
     void serialize(Archive& ar, const unsigned int version){
         ar & host_name;
         ar & prgm_name;
         ar & var_name;
-        ar & var;
+        ar & var_type;
+        ar & var_float;
+        ar & var_float4;
     }    
 };
 

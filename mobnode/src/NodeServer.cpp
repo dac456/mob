@@ -204,12 +204,19 @@ namespace MobNode
         
         //Find memory in shared pool and set
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
-        std::pair<float*, bip::managed_shared_memory::size_type> res;
         
-        res = segment.find<float>(mem.var_name.c_str());
-        float* val = res.first;
-
-        (*(val+mem.idx)) = atof(mem.val.c_str());
+        if(mem.val_type == "float"){
+            auto res = segment.find<float>(mem.var_name.c_str());
+            float* val = res.first;
+    
+            (*(val+mem.idx)) = atof(mem.val.c_str());
+        }
+        else if(mem.val_type == "float4"){
+            auto res = segment.find<mob::float4>(mem.var_name.c_str());
+            mob::float4* val = res.first;    
+            
+            (*(val+mem.idx)) = mob::float4(mem.val);  
+        }
     }
     
     void NodeServer::_handleMsgPrgmGetMem(mob::node_message& msg){
@@ -223,15 +230,20 @@ namespace MobNode
         
         //Find memory in shared pool
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
-        std::pair<float*, bip::managed_shared_memory::size_type> res;
-        
-        res = segment.find<float>(mem.var_name.c_str());
-        float* val = res.first; 
-        
-        //mem.val = (*(val+mem.idx));
-        std::stringstream val_str;
-        val_str << (*(val+mem.idx));
-        mem.val = val_str.str();   
+        if(mem.val_type == "float"){
+            auto res = segment.find<float>(mem.var_name.c_str());
+            float* val = res.first; 
+            
+            std::stringstream val_str;
+            val_str << (*(val+mem.idx));
+            mem.val = val_str.str();
+        }
+        else if(mem.val_type == "float4"){
+            auto res = segment.find<mob::float4>(mem.var_name.c_str());
+            mob::float4* val = res.first;     
+            
+            mem.val = (*(val+mem.idx)).str();        
+        }
         
         //Re-serialize data
         std::stringstream msg_stream_out;
@@ -449,6 +461,7 @@ namespace MobNode
     }    
     
     void NodeServer::_handleMsgSetTasks(mob::node_message& msg){
+        usleep(250000); //kludge - need flag to wait for StartPrgm to complete
         std::cout << "set_tasks" << std::endl;
         
         //Decode message

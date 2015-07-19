@@ -11,10 +11,12 @@ int main(int argc, char* argv[])
         host.launch("mobtest", "test");
         host.wait("mobtest", "test");
     
-        std::vector<float> result = host.capture("mobtest", "c");
+        //std::vector<float> result = host.capture<float>("mobtest", "c");
+        std::vector<mob::float4> result;
+        result = host.capture_float4("mobtest", "c");
         
         for(size_t i=0; i<result.size(); i++){
-            std::cout << result[i] << std::endl;
+            std::cout << result[i].str() << std::endl;
         }        
         
         sleep(1);

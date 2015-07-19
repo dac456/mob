@@ -67,6 +67,7 @@ namespace mob
     private:       
         void _start_accept();
         void _handle_receive(const boost::system::error_code& err, const size_t bytesReceived);
+        void _handle_send(const boost::system::error_code& err, const size_t bytesSent);
         
         //void _handle_node_ping_lib(node_message& msg);
         void _handle_prgm_get_mem(node_message& msg);

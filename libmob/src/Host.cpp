@@ -1,5 +1,4 @@
 #include "Host.h"
-#include "NodeMessage.h"
 
 namespace mob
 {
@@ -51,7 +50,7 @@ namespace mob
         _kernel_status_map[std::make_pair(prgm,kernel)] = false;           
     }
     
-    std::vector<float> host::capture(std::string prgm, std::string var){
+    std::vector<float> host::capture_float(std::string prgm, std::string var){
         node_message msg(HOST_GET_MEM);
         _waiting_for_capture = true;
         
@@ -59,6 +58,7 @@ namespace mob
         msg_data.host_name = asio::ip::host_name();
         msg_data.prgm_name = prgm;
         msg_data.var_name = var;
+        msg_data.var_type = "float";
         
         std::stringstream msg_stream;
         boost::archive::text_oarchive oa(msg_stream);
@@ -76,8 +76,37 @@ namespace mob
         
        while(_waiting_for_capture);
        
-       return _capture_buffer;       
-    }
+       return _capture_buffer_float;
+    } 
+    
+    std::vector<float4> host::capture_float4(std::string prgm, std::string var){
+        node_message msg(HOST_GET_MEM);
+        _waiting_for_capture = true;
+        
+        prgm_var_data msg_data;
+        msg_data.host_name = asio::ip::host_name();
+        msg_data.prgm_name = prgm;
+        msg_data.var_name = var;
+        msg_data.var_type = "float4";
+        
+        std::stringstream msg_stream;
+        boost::archive::text_oarchive oa(msg_stream);
+        oa << msg_data;              
+        
+        msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());   
+        std::pair<char*, size_t> msg_pair = msg.encode();
+        
+        asio::ip::udp::resolver res(_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), _first_host, boost::lexical_cast<std::string>(PRGM_PORT));
+        asio::ip::udp::endpoint ep = *res.resolve(query);
+        
+        _socket.async_send_to(asio::buffer(msg_pair.first, msg_pair.second), ep, boost::bind(&host::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));  
+        delete[] msg_pair.first;
+        
+       while(_waiting_for_capture);
+       
+       return _capture_buffer_float4;
+    }     
     
     void host::wait(std::string prgm, std::string kernel){
         while(!_kernel_status_map.at(std::make_pair(prgm,kernel)));
@@ -140,8 +169,16 @@ namespace mob
         ia >> data;
         
         //TODO: needs to be way more robust
-        _capture_buffer.clear();
-        _capture_buffer = data.var;
+        std::cout << data.var_type << std::endl;
+        if(data.var_type == "float"){
+            _capture_buffer_float.clear();
+            _capture_buffer_float = data.var_float;
+        }
+        else if(data.var_type == "float4"){
+            _capture_buffer_float4.clear();
+            _capture_buffer_float4 = data.var_float4;           
+        }
+        
         _waiting_for_capture = false;        
     }
     

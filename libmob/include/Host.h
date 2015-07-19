@@ -2,6 +2,8 @@
 #define __HOST_H
 
 #include "MobCommon.h"
+#include "NodeMessage.h"
+#include "DataTypes.h"
 
 namespace mob
 {
@@ -20,14 +22,18 @@ namespace mob
         std::map<std::pair<std::string,std::string>, bool> _kernel_status_map;
         
         bool _waiting_for_capture;
-        std::vector<float> _capture_buffer;
+        
+        std::vector<float> _capture_buffer_float;
+        std::vector<float4> _capture_buffer_float4;
                 
     public:
         host();
         ~host();
         
         void launch(std::string prgm, std::string kernel);
-        std::vector<float> capture(std::string prgm, std::string var); //TODO: overload for types?
+        
+        std::vector<float> capture_float(std::string prgm, std::string var);
+        std::vector<float4> capture_float4(std::string prgm, std::string var);
         
         void wait(std::string prgm, std::string kernel);
         

@@ -2,6 +2,8 @@
 #include "Kernel.h"
 #include "GMalloc.h"
 
+typedef mob::float4 float4;
+
 int main(int argc, char* argv[])
 {
 
@@ -14,19 +16,19 @@ int main(int argc, char* argv[])
     
     //TODO: specify types like float4 and allow indicating in/out for data
     //      also hepers for converting C-style arrays to gmem arrays
-    mob::gmem<float> a("a", mob, 400);
+    mob::gmem<float4> a("a", mob, 400);
     for(size_t i=0; i<400; i++){
-        a.init(i, (float)i);
+        a.init(i, float4(i,i,i,i));
     }
     
-    mob::gmem<float> b("b", mob, 400);
+    mob::gmem<float4> b("b", mob, 400);
     for(size_t i=0; i<400; i++){
-        b.init(i, (float)i);
+        b.init(i, float4(i,i,i,i));
     }    
     
-    mob::gmem<float> c("c", mob, 400);
+    mob::gmem<float4> c("c", mob, 400);
     for(size_t i=0; i<400; i++){
-        b.init(i, 0.0f);
+        b.init(i, float4(0.0f, 0.0f, 0.0f, 0.0f));
     }      
     
     mob::kernel test("test", [&a, &b, &c](size_t global_index){
