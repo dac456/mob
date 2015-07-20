@@ -5,7 +5,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules")
 
 add_definitions( -DMOBAPI_EXPORT )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+#set(CMAKE_CXX_FLAGS "-O0 -g -traceback -ggdb")
+set(CMAKE_CXX_FLAGS "-O3 -std=c++11")
 
 # Canis
 include_directories("~/Development/mob/Canis/include")

@@ -40,7 +40,7 @@ namespace mob
                 
         //mob
         std::string _prgm_name;
-        bool _waiting_for_tasks;
+        volatile bool _waiting_for_tasks;
         
         std::map<std::string, kernel*> _kernel_map;
         std::map<std::string, void*> _allocated_mem;

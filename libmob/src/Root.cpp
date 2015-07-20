@@ -80,7 +80,7 @@ namespace mob
             msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
             std::pair<char*, size_t> msg_pair = msg.encode();
             
-            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), 9001);
+            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
             broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
             broad_socket.close(error);
         }

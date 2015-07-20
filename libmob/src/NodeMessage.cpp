@@ -59,7 +59,7 @@ namespace mob
         buf[0] = _header.msgType;
         
         //memcpy(&buf[1], reinterpret_cast<char*>(&_header.bodySize), sizeof(size_t));
-        char header[5] = "";
+        char header[7] = "";
         sprintf(header, "%6d", (int)_header.bodySize);
         memcpy(&buf[1], header, 6);
         memcpy(&buf[1 + 6], _body.body, _header.bodySize);

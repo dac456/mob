@@ -104,7 +104,7 @@ namespace mob
         delete[] msg_pair.first;
         
        while(_waiting_for_capture);
-       
+
        return _capture_buffer_float4;
     }     
     
@@ -157,7 +157,7 @@ namespace mob
         }
     }
     
-    void host::_handle_get_mem(node_message& msg){    
+    void host::_handle_get_mem(node_message& msg){
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -176,7 +176,7 @@ namespace mob
             _capture_buffer_float4 = data.var_float4;           
         }
         
-        _waiting_for_capture = false;        
+        _waiting_for_capture = false;  
     }
     
     void host::_handle_kernel_finished(node_message& msg){

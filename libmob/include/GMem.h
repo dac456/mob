@@ -42,7 +42,7 @@ namespace mob
         std::string _mem_name;
         root* _mob_root;
         
-        std::pair<size_t, bool> _waiting_for_remote;
+        std::pair<size_t, volatile bool> _waiting_for_remote;
         boost::signals2::connection _remote_get;
         
         bool _dirty;
@@ -219,7 +219,7 @@ namespace mob
             msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
             
             _mob_root->_prgm_get_mem(msg);
-            while(_waiting_for_remote.second); //TODO: timeout and detect bad node
+            //while(_waiting_for_remote.second); //TODO: timeout and detect bad node
             
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
             std::pair<T*, bip::managed_shared_memory::size_type> res;

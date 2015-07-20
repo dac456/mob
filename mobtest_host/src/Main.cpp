@@ -74,7 +74,6 @@ void initialize(int argc, char* argv[]){
             //host.wait("mobtest", "integrate_forces");
 
             result = host.capture_float4("mobtest", "p"); 
-      
         }
         
     });    
