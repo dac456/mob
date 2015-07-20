@@ -157,11 +157,7 @@ namespace mob
         }
     }
     
-    void host::_handle_get_mem(node_message& msg){
-        std::cout << "handle_get_mem" << std::endl;
-        
-        std::cout << msg.get_header().bodySize << std::endl;
-        
+    void host::_handle_get_mem(node_message& msg){    
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -171,7 +167,6 @@ namespace mob
         ia >> data;
         
         //TODO: needs to be way more robust
-        std::cout << data.var_type << std::endl;
         if(data.var_type == "float"){
             _capture_buffer_float.clear();
             _capture_buffer_float = data.var_float;
@@ -185,7 +180,7 @@ namespace mob
     }
     
     void host::_handle_kernel_finished(node_message& msg){
-        std::cout << "host handle kernel finished" << std::endl;
+        //std::cout << "host handle kernel finished" << std::endl;
         
          //Decode message
         std::stringstream msg_stream;

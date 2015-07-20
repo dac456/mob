@@ -299,7 +299,7 @@ namespace mob
                     mem->fetch();                    
                 }
                 
-                usleep(250000); //latency in memory propagation? this is a kludge either way
+                //usleep(50000); //latency in memory propagation? this is a kludge either way
                 
                 _host_get_mem(data);
             });                  

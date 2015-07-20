@@ -1,7 +1,7 @@
 #ifndef __MOBCOMMON_H
 #define __MOBCOMMON_H
 
-#include "Common.h"
+#include "FrameworkCommon.h"
 
 
 #if defined(__WIN32__) || defined(_WIN32) || defined(WIN32)

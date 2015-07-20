@@ -25,7 +25,7 @@ namespace mob
             std::cout << "got " << mem->size() << " tasks" << std::endl;
             TaskList::const_iterator it;
             for(it = mem->cbegin(); it != mem->cend(); it++){
-                //boost::thread t(_task, idx);
+                //boost::thread t(_kernel, *it);
                 _kernel(*it);
             }
             

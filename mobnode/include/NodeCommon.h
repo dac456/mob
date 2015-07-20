@@ -1,7 +1,7 @@
 #ifndef __NODECOMMON_H
 #define __NODECOMMON_H
 
-#include "Common.h"
+#include "FrameworkCommon.h"
 
 namespace MobNode
 {

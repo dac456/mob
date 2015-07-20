@@ -21,28 +21,29 @@ int main(int argc, char* argv[])
     mob::gmem<float4> x("x", mob, 400);
     
     //Initialize particles
-    float d = 2.0;
+    float d = 2.0f;
     size_t idx = 0;
     for(size_t i=0; i<5; i++){
         for(size_t j=0; j<8; j++){
             for(size_t k=0; k<10; k++){
                 v.init(idx, float4(0.0f, 0.0f, 0.0f, 1.0f));
-                p.init(idx, float4(d*float(i) - (5.0f/2.0),d*float(j), d*float(k) - (10.0f/2.0), 1.0));
-                x.init(idx, float4(d*float(i) - (5.0f/2.0),d*float(j), d*float(k) - (10.0f/2.0), 1.0));
+                p.init(idx, float4(d*float(i) - (5.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
+                x.init(idx, float4(d*float(i) - (5.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
+                
+                idx++;
             }
         }
     }
 
-    float dt = 1.0f/240.0f;
+    float dt = 1.0f/140.0f;
     
     mob::kernel integrate_forces("integrate_forces", [&v, &p, &x, dt](size_t global_index){
         
         v.set(global_index, v[global_index] + (float4(0.0f, -9.8f, 0.0f, 1.0f) * 2.0f * dt));
-        //v[global_index].w = 1.0;
+        v.set(global_index, float4(v[global_index].x, v[global_index].y, v[global_index].z, 1.0f));
         
         p.set(global_index, p[global_index] + v[global_index] * dt);
-        //std::cout << p[global_index].str() << std::endl;
-        //p[global_index].w = 1.0;        
+        p.set(global_index, float4(p[global_index].x, p[global_index].y, p[global_index].z, 1.0f));       
 
     });
     
