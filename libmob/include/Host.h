@@ -14,12 +14,12 @@ namespace mob
         asio::io_service _service;
         asio::ip::udp::socket _socket;
         asio::ip::udp::endpoint _sender_endpoint;
-        char _buffer[1024*1024];
+        std::vector<char> _buffer;
        
         //mob
         std::string _first_host;
         std::map<std::string, bool> _node_map;
-        std::map<std::pair<std::string,std::string>, bool> _kernel_status_map;
+        std::map<std::pair<std::string,std::string>, volatile bool> _kernel_status_map;
         
         volatile bool _waiting_for_capture;
         

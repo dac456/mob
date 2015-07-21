@@ -9,6 +9,7 @@ namespace MobNode
     NodeServer::NodeServer(asio::io_service& service) 
         : _socket(service, asio::ip::udp::endpoint(asio::ip::udp::v4(), NODE_PORT)),
           _acceptor_tcp(service, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), NODE_PORT)){
+        _buffer.resize((1024*1024)*16);
               
         _service = &service;
         _startAccept();
@@ -38,7 +39,7 @@ namespace MobNode
         if(err) return;
         
         mob::node_message msg;
-        msg.decode(_buffer);
+        msg.decode(&_buffer[0]);
         
         if(msg.is_valid()){
             switch(msg.get_type()){
@@ -112,13 +113,13 @@ namespace MobNode
             std::cout << "_handleTcpReadHeader " << bytesReceived << std::endl;
             
             
-            msg->decode_header(msg->buffer());
+            msg->decode_header(&_buffer[0]);
             
             std::cout << "getting body size " << msg->get_header().bodySize << std::endl;
             
             switch(msg->get_type()){
                 case mob::NODE_SET_TASKS:
-                    asio::async_read(conn->getSocket(), asio::buffer(msg->body_buffer(), msg->get_header().bodySize+sizeof(size_t)), boost::bind(&NodeServer::_handleTcpReadBodySetTasks, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));  
+                    asio::async_read(conn->getSocket(), asio::buffer(_buffer, msg->get_header().bodySize+sizeof(size_t)), boost::bind(&NodeServer::_handleTcpReadBodySetTasks, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));  
                     break;
                
                 default:
@@ -132,7 +133,7 @@ namespace MobNode
         if(!err){
             mob::node_message* msg = new mob::node_message();
             
-            asio::async_read(conn->getSocket(), asio::buffer(msg->buffer(), 6+1), boost::bind(&NodeServer::_handleTcpReadHeader, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));
+            asio::async_read(conn->getSocket(), asio::buffer(_buffer, 10+1), boost::bind(&NodeServer::_handleTcpReadHeader, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));
             _startAcceptTcp();
         }
     }
@@ -140,7 +141,7 @@ namespace MobNode
     void NodeServer::_handleTcpReadBodySetTasks(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived){
         std::cout << "_handleTcpReadBodySetTasks " << bytesReceived << std::endl;
         
-        msg->decode_body(msg->body_buffer());
+        msg->decode_body(&_buffer[0]);
         
         _handleMsgSetTasks(*msg);
         
@@ -352,7 +353,9 @@ namespace MobNode
             
             //Initial task assignment
             size_t nodeCount = _nodeMap.size();
-            std::vector<size_t> taskAssign[nodeCount];
+            std::vector<std::vector<size_t>> taskAssign;
+            taskAssign.resize(nodeCount);
+            std::cout << nodeCount << std::endl;
             
             size_t blockSize = floor((float)(mem.num_tasks)/(float)(nodeCount));
             
@@ -378,11 +381,11 @@ namespace MobNode
                 std::stringstream msgStream;
                 boost::archive::text_oarchive oa(msgStream);
                 oa << msgData;                
-
+                
                 msgOut.set_data(msgStream.str().c_str(), msgStream.str().size());
                 std::pair<char*, size_t> msgPair = msgOut.encode();
                 
-                //if(node.first != asio::ip::host_name()){
+                if(node.first != asio::ip::host_name()){
                     asio::ip::tcp::resolver resolver(*_service);
                     asio::ip::tcp::resolver::query query(asio::ip::tcp::v4(), node.first, boost::lexical_cast<std::string>(NODE_PORT));
                     asio::ip::tcp::endpoint ep = *resolver.resolve(query);
@@ -393,10 +396,10 @@ namespace MobNode
                     tcpSock.connect(ep);
                     tcpSock.send(asio::buffer(msgPair.first, msgPair.second));
                     delete[] msgPair.first; 
-                //}
-                //else{
-                //    _handleMsgSetTasks(msgOut);
-                //}
+                }
+                else{
+                    _handleMsgSetTasks(msgOut);
+                }
                 
                 nodeIdx++;
             }
@@ -461,7 +464,8 @@ namespace MobNode
     }    
     
     void NodeServer::_handleMsgSetTasks(mob::node_message& msg){
-        usleep(250000); //kludge - need flag to wait for StartPrgm to complete
+        //usleep(250000); //kludge - need flag to wait for StartPrgm to complete
+        sleep(1);
         std::cout << "set_tasks" << std::endl;
         
         //Decode message
@@ -505,7 +509,9 @@ namespace MobNode
                 }
             }*/
             //TODO: this could also be accomplished with a shared flag
+            std::cout << "hang1" << std::endl;
             while(!_programMap[data.prgm_name].running_on_node.at(asio::ip::host_name())); //block until running
+            std::cout << "hang2" << std::endl;
 
             bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());      
             TaskList* mem = segment.find<TaskList>("task_list").first;
@@ -530,6 +536,7 @@ namespace MobNode
         ia >> data;
         
         //Update running status
+        std::cout << data.node_name << std::endl;
         _programMap[data.prgm_name].running_on_node[data.node_name] = true;          
     }
     

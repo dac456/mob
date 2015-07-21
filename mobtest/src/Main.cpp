@@ -16,16 +16,16 @@ int main(int argc, char* argv[])
     
     //TODO: allow indicating in/out for data
     //      also hepers for converting C-style arrays to gmem arrays
-    mob::gmem<float4> v("v", mob, 400); 
-    mob::gmem<float4> p("p", mob, 400);
-    mob::gmem<float4> x("x", mob, 400);
+    mob::gmem<float4> v("v", mob, 8000); 
+    mob::gmem<float4> p("p", mob, 8000);
+    mob::gmem<float4> x("x", mob, 8000);
     
     //Initialize particles
     float d = 2.0f;
     size_t idx = 0;
-    for(size_t i=0; i<5; i++){
-        for(size_t j=0; j<8; j++){
-            for(size_t k=0; k<10; k++){
+    for(size_t i=0; i<20/*5*/; i++){
+        for(size_t j=0; j<20/*8*/; j++){
+            for(size_t k=0; k<20/*10*/; k++){
                 v.init(idx, float4(0.0f, 0.0f, 0.0f, 1.0f));
                 p.init(idx, float4(d*float(i) - (5.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
                 x.init(idx, float4(d*float(i) - (5.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));

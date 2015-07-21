@@ -5,12 +5,12 @@ namespace MobNode
 {
     
     NodeClient::NodeClient(asio::io_service& service, std::string addr) : _socket(service){
-        asio::ip::udp::resolver resolver(service);
+        /*asio::ip::udp::resolver resolver(service);
         asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, boost::lexical_cast<std::string>(NODE_PORT));
 
         asio::ip::udp::endpoint receiverEndpoint = *resolver.resolve(query);
 
-        _socket.open(asio::ip::udp::v4());
+        _socket.open(asio::ip::udp::v4());*/
         
         //Broadcast a NODE_PING message and find all nodes on network
         //TODO: move to method and broadcast on timer
@@ -39,11 +39,11 @@ namespace MobNode
     }
 
     NodeClient::~NodeClient(){
-        _socket.close();
+        //_socket.close();
     }
 
     void NodeClient::_onSend(const boost::system::error_code& err, const size_t bytesSent){
-        _socket.close();
+        //_socket.close();
     }
 
 }

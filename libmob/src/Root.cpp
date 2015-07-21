@@ -7,12 +7,13 @@ namespace mob
 {
     
     //TODO: program ports should be incremented to allow multiple programs per node
-    root::root() : _socket(_service, asio::ip::udp::endpoint(asio::ip::udp::v4(), 9002)){
+    root::root() : _socket(_service, asio::ip::udp::endpoint(asio::ip::udp::v4(), PRGM_PORT)){
         _waiting_for_tasks = true;
+        _buffer.resize((1024*1024)*16);
     }
     
     root::~root(){
-        
+
     }
     
     void root::init(int argc, char* argv[]){
@@ -47,11 +48,11 @@ namespace mob
         
         try{
             std::cout << "creating memory" << std::endl;
-            bip::managed_shared_memory segment(bip::open_or_create, _prgm_name.c_str(), 1024*1024);
+            bip::managed_shared_memory segment(bip::open_or_create, _prgm_name.c_str(), (1024*1024)*32);
             segment.construct<TaskList>("task_list")(segment.get_segment_manager());
             
-            bip::named_condition cond(bip::create_only,  "test_cnd");
-            bip::named_mutex task_mutex(bip::create_only, "test_mtx");
+            //bip::named_condition cond(bip::create_only,  "test_cnd");
+            //bip::named_mutex task_mutex(bip::create_only, "test_mtx");
         }
         catch(...){
             std::cout << "exception" << std::endl;
@@ -175,7 +176,7 @@ namespace mob
         if(err) return;
         
         node_message msg;
-        msg.decode(_buffer);
+        msg.decode(&_buffer[0]);
         
         if(msg.is_valid()){
             switch(msg.get_type()){
@@ -290,6 +291,7 @@ namespace mob
         if(data.prgm_name == _prgm_name){
             boost::thread fetch_mem([=](){
                 //Fetch from remote
+                std::cout << "fetch" << std::endl;
                 if(data.var_type == "float"){
                     gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
                     mem->fetch();
@@ -307,6 +309,8 @@ namespace mob
     }
     
     void root::_host_get_mem(prgm_var_data data){
+        std::cout << "_host_get_mem" << std::endl;
+        
         //Get shared local memory
         bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
         

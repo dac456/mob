@@ -102,7 +102,7 @@ namespace mob
         
         void fetch(){
             //if(_dirty){
-                for(size_t i=0; i<_sz; i++){    
+                for(size_t i=0; i<_sz; i++){  
                     bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
                     TaskList* task_list = segment.find<TaskList>("task_list").first;  
                     

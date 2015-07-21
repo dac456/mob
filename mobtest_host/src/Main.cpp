@@ -112,7 +112,19 @@ void resize(int width, int height){
     projMatrix = glm::perspective(glm::radians(45.0f), (float)width/(float)height, 0.1f, 10000.0f);
 }
 
+int frame, currentTime, lastTime = 0;
 void render(){
+    frame++;
+    currentTime=glutGet(GLUT_ELAPSED_TIME);
+    if (currentTime - lastTime > 1000) {
+        char s[20];
+        sprintf(s,"FPS:%4.2f",
+            frame*1000.0/(currentTime-lastTime));
+        glutSetWindowTitle(s);
+        lastTime = currentTime;
+        frame = 0;
+    }    
+    
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.5f, 0.5f, 0.5, 1.0f);    
     

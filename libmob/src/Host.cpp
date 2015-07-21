@@ -5,6 +5,7 @@ namespace mob
     
     host::host() : _socket(_service, asio::ip::udp::endpoint(asio::ip::udp::v4(), HOST_PORT)){
         _first_host = "";
+        _buffer.resize((1024*1024)*16);
         
         //Start an async server so we can talk to the network
         _start_accept();
@@ -121,7 +122,7 @@ namespace mob
         if(err) return;
         
         node_message msg;
-        msg.decode(_buffer);
+        msg.decode(&_buffer[0]);
         
         if(msg.is_valid()){
             switch(msg.get_type()){
@@ -158,6 +159,7 @@ namespace mob
     }
     
     void host::_handle_get_mem(node_message& msg){
+        std::cout << "_handle_get_mem" << std::endl;
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();

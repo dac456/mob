@@ -44,7 +44,8 @@ namespace mob
         
         bool _is_valid;
         
-        char _buffer[sizeof(size_t) + 1 + (1024*1024)];
+        //char _buffer[sizeof(size_t) + 1 + ((1024*1024)*2)];
+        char* _buffer;
         
     public:
         node_message();
@@ -59,6 +60,7 @@ namespace mob
         msg_header get_header();
         
         std::pair<char*, size_t> encode();
+        std::pair<std::vector<char>, size_t> encode_vec();
         void decode(char* buffer);
         
         void decode_header(char* buffer);

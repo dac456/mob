@@ -5,11 +5,13 @@ namespace mob
     
     node_message::node_message(){
         _is_valid = false;
+        //_buffer = new char[sizeof(size_t) + 1 + ((1024*1024)*2)];
     }
     
     node_message::node_message(MSG_TYPE type){
         _is_valid = false;
         _header.msgType = type;
+        //_buffer = new char[sizeof(size_t) + 1 + ((1024*1024)*2)];
     }
     
     node_message::~node_message(){
@@ -17,6 +19,8 @@ namespace mob
             delete[] _body.body;
             _body.body = nullptr;
         }
+        
+        //delete _buffer;
     }
     
     MSG_TYPE node_message::get_type(){
@@ -52,22 +56,42 @@ namespace mob
     }
     
     std::pair<char*, size_t> node_message::encode(){
-        size_t bufLen = _header.bodySize + 1 + sizeof(size_t)*2;
+        size_t bufLen = _header.bodySize + 11 + sizeof(size_t);
         char* buf = new char[bufLen];
         //char buf[bufLen];
         
         buf[0] = _header.msgType;
         
         //memcpy(&buf[1], reinterpret_cast<char*>(&_header.bodySize), sizeof(size_t));
-        char header[7] = "";
-        sprintf(header, "%6d", (int)_header.bodySize);
-        memcpy(&buf[1], header, 6);
-        memcpy(&buf[1 + 6], _body.body, _header.bodySize);
-        memcpy(&buf[1 + 6 + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
+        char header[11] = "";
+        sprintf(header, "%10d", (int)_header.bodySize);
+        memcpy(&buf[1], header, 10);
+        memcpy(&buf[1 + 10], _body.body, _header.bodySize);
+        memcpy(&buf[1 + 10 + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
         
         _is_valid = true; 
         return std::make_pair(buf, bufLen);
     }
+    
+    std::pair<std::vector<char>, size_t> node_message::encode_vec(){
+        size_t bufLen = _header.bodySize + 1 + sizeof(size_t)*2;
+        //char* buf = new char[bufLen];
+        //char buf[bufLen];
+        std::vector<char> buf;
+        buf.resize(bufLen);
+        
+        buf[0] = _header.msgType;
+        
+        //memcpy(&buf[1], reinterpret_cast<char*>(&_header.bodySize), sizeof(size_t));
+        char header[11] = "";
+        sprintf(header, "%10d", (int)_header.bodySize);
+        memcpy(&buf[1], header, 10);
+        memcpy(&buf[1 + 10], _body.body, _header.bodySize);
+        memcpy(&buf[1 + 10 + _header.bodySize], reinterpret_cast<char*>(&_body.checksum), sizeof(size_t));
+        
+        _is_valid = true; 
+        return std::make_pair(buf, bufLen);
+    }    
     
     void node_message::decode(char* buffer){
         if(buffer != nullptr){
@@ -83,10 +107,10 @@ namespace mob
             _header.bodySize = s;       
             
             idx += sizeof(size_t);*/
-            char header[7] = "";
-            strncat(header, buffer + 1, 6);
+            char header[11] = "";
+            strncat(header, buffer + 1, 10);
             _header.bodySize = atoi(header);
-            idx += 6;
+            idx += 10;
             
             //Body
             size_t sum = 0;
@@ -127,8 +151,8 @@ namespace mob
                 s += static_cast<size_t>(buffer[i]) << ((i - idx)*8);
             }
             _header.bodySize = s;*/
-            char header[7] = "";
-            strncat(header, buffer + 1, 6);
+            char header[11] = "";
+            strncat(header, buffer + 1, 10);
             _header.bodySize = atoi(header);
             //idx += 4;            
         }        
@@ -171,7 +195,7 @@ namespace mob
     }
     
     char* node_message::body_buffer(){
-        return _buffer + (6 + 1);
+        return _buffer + (10 + 1);
     }
     
     bool node_message::is_valid(){
