@@ -170,12 +170,16 @@ namespace mob
         
         //TODO: needs to be way more robust
         if(data.var_type == "float"){
-            _capture_buffer_float.clear();
-            _capture_buffer_float = data.var_float;
+            //_capture_buffer_float.clear();
+            //_capture_buffer_float = data.var_float
+            _capture_buffer_float.resize(data.end);
+            std::copy(data.var_float.begin(), data.var_float.end(), _capture_buffer_float.begin() + data.start);
         }
         else if(data.var_type == "float4"){
-            _capture_buffer_float4.clear();
-            _capture_buffer_float4 = data.var_float4;           
+            //_capture_buffer_float4.clear();
+            //_capture_buffer_float4 = data.var_float4;     
+            _capture_buffer_float4.resize(data.end); 
+            std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
         }
         
         _waiting_for_capture = false;  

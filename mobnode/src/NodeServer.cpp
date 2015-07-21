@@ -108,6 +108,15 @@ namespace MobNode
         _acceptor_tcp.async_accept(conn->getSocket(), boost::bind(&NodeServer::_handleTcpAccept, this, conn, asio::placeholders::error));
     }
     
+    void NodeServer::_handleTcpAccept(std::shared_ptr<NodeConnection> conn, const boost::system::error_code& err){
+        if(!err){
+            mob::node_message* msg = new mob::node_message();
+            
+            asio::async_read(conn->getSocket(), asio::buffer(_buffer, 10+1), boost::bind(&NodeServer::_handleTcpReadHeader, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));
+            _startAcceptTcp();
+        }
+    }    
+    
     void NodeServer::_handleTcpReadHeader(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived){
         if(!err){
             std::cout << "_handleTcpReadHeader " << bytesReceived << std::endl;
@@ -126,15 +135,6 @@ namespace MobNode
                     break;
             }  
             
-        }
-    }
-    
-    void NodeServer::_handleTcpAccept(std::shared_ptr<NodeConnection> conn, const boost::system::error_code& err){
-        if(!err){
-            mob::node_message* msg = new mob::node_message();
-            
-            asio::async_read(conn->getSocket(), asio::buffer(_buffer, 10+1), boost::bind(&NodeServer::_handleTcpReadHeader, this, conn, msg, asio::placeholders::error, asio::placeholders::bytes_transferred));
-            _startAcceptTcp();
         }
     }
     

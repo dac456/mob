@@ -80,8 +80,8 @@ namespace MobNode
         void _handleSend(const boost::system::error_code& err, const size_t bytesSent);
         
         void _startAcceptTcp();
-        void _handleTcpReadHeader(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived);
         void _handleTcpAccept(std::shared_ptr<NodeConnection> conn, const boost::system::error_code& err);
+        void _handleTcpReadHeader(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived);
         
         void _handleTcpReadBodySetTasks(std::shared_ptr<NodeConnection> conn, mob::node_message* msg, const boost::system::error_code& err, const size_t bytesReceived);
         

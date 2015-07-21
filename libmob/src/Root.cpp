@@ -292,71 +292,84 @@ namespace mob
             boost::thread fetch_mem([=](){
                 //Fetch from remote
                 std::cout << "fetch" << std::endl;
+                size_t end = 0;
                 if(data.var_type == "float"){
                     gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
                     mem->fetch();
+                    end = mem->size();
                 }
                 else if(data.var_type == "float4"){
                     gmem<float4>* mem = (gmem<float4>*)_allocated_mem.at(data.var_name);
-                    mem->fetch();                    
+                    mem->fetch();  
+                    end = mem->size();            
                 }
                 
                 //usleep(50000); //latency in memory propagation? this is a kludge either way
                 
-                _host_get_mem(data);
+                _host_get_mem(data, end);
             });                  
         }       
     }
     
-    void root::_host_get_mem(prgm_var_data data){
+    void root::_host_get_mem(prgm_var_data data, size_t sz){
         std::cout << "_host_get_mem" << std::endl;
+        
         
         //Get shared local memory
         bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
-        
-        prgm_var_data data_out;
-        
-        if(data.var_type == "float"){
-            auto res = segment.find<float>(data.var_name.c_str());
-            float* val = res.first;
+ 
+        size_t block_size = floor(float(sz)/4.0f);
+        for(size_t i=0; i<4; i++){
             
-            std::vector<float> out_vec(val, val + res.second);
-            data_out.var_float = out_vec;
-            data_out.var_type = "float";
-        }
-        else if(data.var_type == "float4"){
-            auto res = segment.find<float4>(data.var_name.c_str());
-            float4* val = res.first;
+            size_t start = i*block_size;
+            size_t end = start+block_size;
+        
+            prgm_var_data data_out;
+            data_out.start = start;
+            data_out.end = end;
             
-            std::vector<float4> out_vec(val, val + res.second);
-            data_out.var_float4 = out_vec;
-            data_out.var_type = "float4";            
-        }
-        
-        
-        data_out.host_name = asio::ip::host_name();
-        data_out.prgm_name = data.prgm_name;
-        data_out.var_name = data.var_name;
-                   
-        //Ping back
-        node_message msg_out(HOST_GET_MEM);
-        
-        std::stringstream msg_stream_out;
-        boost::archive::text_oarchive oa(msg_stream_out);
-        oa << data_out;
+            if(data.var_type == "float"){
+                auto res = segment.find<float>(data.var_name.c_str());
+                float* val = res.first;
                 
-        msg_out.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
-        std::pair<char*, size_t> msgPair = msg_out.encode();
-        
-        asio::ip::udp::resolver resolver(_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
-        asio::ip::udp::endpoint ep = *resolver.resolve(query);
-        
-        std::cout << msg_out.get_header().bodySize << std::endl;
-        _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
-        //_socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
-        
-        delete[] msgPair.first;        
+                std::vector<float> out_vec(val + start, val + end);
+                data_out.var_float = out_vec;
+                data_out.var_type = "float";
+            }
+            else if(data.var_type == "float4"){
+                auto res = segment.find<float4>(data.var_name.c_str());
+                float4* val = res.first;
+                
+                std::vector<float4> out_vec(val + start, val + end);
+                data_out.var_float4 = out_vec;
+                data_out.var_type = "float4";            
+            }
+            
+            
+            data_out.host_name = asio::ip::host_name();
+            data_out.prgm_name = data.prgm_name;
+            data_out.var_name = data.var_name;
+                       
+            //Ping back
+            node_message msg_out(HOST_GET_MEM);
+            
+            std::stringstream msg_stream_out;
+            boost::archive::text_oarchive oa(msg_stream_out);
+            oa << data_out;
+                    
+            msg_out.set_data(msg_stream_out.str().c_str(), msg_stream_out.str().size());
+            std::pair<char*, size_t> msgPair = msg_out.encode();
+            
+            asio::ip::udp::resolver resolver(_service);
+            asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
+            asio::ip::udp::endpoint ep = *resolver.resolve(query);
+            
+            std::cout << msg_out.get_header().bodySize << std::endl;
+            //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+            _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+            
+            delete[] msgPair.first;  
+        }      
     }
     
     void root::_prgm_send_mem(node_message& msg){
