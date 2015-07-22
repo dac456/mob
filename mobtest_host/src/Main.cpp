@@ -24,6 +24,8 @@ glm::mat4 projMatrix;
 
 mob::host host;
 
+bool mouseLock = false;
+
 int main(int argc, char* argv[])
 {
      
@@ -71,7 +73,7 @@ void initialize(int argc, char* argv[]){
         
         for(;;){
             host.launch("mobtest", "integrate_forces");
-            //host.wait("mobtest", "integrate_forces");
+            host.wait("mobtest", "integrate_forces");
 
             result = host.capture_float4("mobtest", "p"); 
         }
@@ -148,7 +150,7 @@ void mouse(int x, int y){
     //POINT mousePos;
     //GetCursorPos(&mousePos);
 
-    //if(mouseLock){
+    if(mouseLock){
         int mX = glutGet(GLUT_WINDOW_X)+(glutGet(GLUT_WINDOW_WIDTH))/2;
         int mY = glutGet(GLUT_WINDOW_Y)+(glutGet(GLUT_WINDOW_HEIGHT))/2;
 
@@ -176,7 +178,7 @@ void mouse(int x, int y){
 
         //SetCursorPos(mX, mY);
         glutWarpPointer(mX, mY);
-    //}
+    }
 }
 
 void keyboard(unsigned char key, int x, int y){
@@ -196,7 +198,7 @@ void keyboard(unsigned char key, int x, int y){
         exit(0);
     }
     if(key == 109){
-        //mouseLock = !mouseLock;
+        mouseLock = !mouseLock;
     }
     glutPostRedisplay();
 

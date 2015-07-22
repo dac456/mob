@@ -5,6 +5,7 @@ namespace mob
     
     host::host() : _socket(_service, asio::ip::udp::endpoint(asio::ip::udp::v4(), HOST_PORT)){
         _first_host = "";
+        _capture_count = 0;
         _buffer.resize((1024*1024)*16);
         
         //Start an async server so we can talk to the network
@@ -110,7 +111,9 @@ namespace mob
     }     
     
     void host::wait(std::string prgm, std::string kernel){
+        std::cout << "host waiting..." << std::endl;
         while(!_kernel_status_map.at(std::make_pair(prgm,kernel)));
+        std::cout << "kernel finished" << std::endl;
     }
     
     
@@ -159,7 +162,7 @@ namespace mob
     }
     
     void host::_handle_get_mem(node_message& msg){
-        std::cout << "_handle_get_mem" << std::endl;
+        //std::cout << "_handle_get_mem" << std::endl;
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -182,7 +185,10 @@ namespace mob
             std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
         }
         
-        _waiting_for_capture = false;  
+        if(_capture_count >= 3){
+            _waiting_for_capture = false;  
+        }
+        _capture_count = (_capture_count + 1) % 4;
     }
     
     void host::_handle_kernel_finished(node_message& msg){

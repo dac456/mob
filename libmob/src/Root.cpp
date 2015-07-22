@@ -304,7 +304,7 @@ namespace mob
                     end = mem->size();            
                 }
                 
-                //usleep(50000); //latency in memory propagation? this is a kludge either way
+                usleep(250000); //latency in memory propagation? this is a kludge either way
                 
                 _host_get_mem(data, end);
             });                  
@@ -364,9 +364,8 @@ namespace mob
             asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
             asio::ip::udp::endpoint ep = *resolver.resolve(query);
             
-            std::cout << msg_out.get_header().bodySize << std::endl;
-            //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
-            _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+            _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
+            //_socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
             
             delete[] msgPair.first;  
         }      

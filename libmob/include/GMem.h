@@ -95,23 +95,23 @@ namespace mob
             TaskList* task_list = segment.find<TaskList>("task_list").first;  
             
             //TODO: always send to make data capture easier. in practice should not do this
-            if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
+            //if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
                 _send_mem(_name, val, idx);
-            }
+                usleep(250000);
+            //}
         }
         
         void fetch(){
             //if(_dirty){
+                /*bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
+                TaskList* task_list = segment.find<TaskList>("task_list").first;  
                 for(size_t i=0; i<_sz; i++){  
-                    bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
-                    TaskList* task_list = segment.find<TaskList>("task_list").first;  
-                    
                     if(std::find(task_list->begin(), task_list->end(), i) == task_list->end()){
                         _waiting_for_remote = std::make_pair(i, true);
                         
                         auto x = _get_mem(_name, i);
                     }
-                }
+                }*/
                 
             //    _dirty = false;
             //}
@@ -135,19 +135,19 @@ namespace mob
                 bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
                 TaskList* task_list = segment.find<TaskList>("task_list").first;  
                 
-                if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
+                //if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
                     std::pair<T*, bip::managed_shared_memory::size_type> res;
                     
                     res = segment.find<T>(_name.c_str());
                     T* mem = res.first;
                     
                     return (*(mem+idx));
-                }
+                /*}
                 else{
                     _waiting_for_remote = std::make_pair(idx, true);
                     
                     return _get_mem(_name, idx);
-                }
+                }*/
             }
             catch(bip::interprocess_exception& e){
                 std::cout << e.what() << std::endl;
@@ -219,7 +219,7 @@ namespace mob
             msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
             
             _mob_root->_prgm_get_mem(msg);
-            //while(_waiting_for_remote.second); //TODO: timeout and detect bad node
+            while(_waiting_for_remote.second); //TODO: timeout and detect bad node
             
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
             std::pair<T*, bip::managed_shared_memory::size_type> res;

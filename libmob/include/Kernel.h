@@ -15,6 +15,9 @@ namespace mob
         mob_kernel_func _kernel;
         mob_kernel_finished _exit_kernel;
         
+        bool _threads_need_update;
+        std::vector< std::vector<size_t> > _threads;
+        
     public:
         kernel(std::string name, mob_kernel_func kernel);
         ~kernel();
