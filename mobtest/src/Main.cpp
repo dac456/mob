@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
         p.set(global_index, p[global_index] + v[global_index] * dt);
         //p.set(global_index, float4(p[global_index].x, p[global_index].y, p[global_index].z, 1.0f));       
 
-    });
+    }, true);
     
     mob.add_kernel(integrate_forces);
     

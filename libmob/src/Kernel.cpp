@@ -4,11 +4,12 @@
 namespace mob
 {
     
-    kernel::kernel(std::string name, mob_kernel_func kernel){
+    kernel::kernel(std::string name, mob_kernel_func kernel, bool implicit_barrier){
         _name = name;
         _kernel = kernel;
         _threads_need_update = true;
-        _threads.resize(4);
+        _implicit_barrier = implicit_barrier;
+        _threads.resize(8);
     }
     
     kernel::~kernel(){
@@ -29,24 +30,28 @@ namespace mob
                 std::cout << "got " << mem->size() << " tasks" << std::endl;
                 
                 size_t t = 0;
-                for(size_t tid : *mem){
-                    _threads[t].push_back(tid);
-                    t = (t + 1) % 4;
+                for(size_t i=0; i<mem->size(); i++){
+                    //std::cout << t << " " << (*mem)[i] << std::endl;
+                    _threads[t].push_back((*mem)[i] );
+                    t = (t + 1) % 8;
                 }
                 
                 _threads_need_update = false;
             }
             
             boost::thread_group grp;
-            for(size_t i=0; i<4; i++){
-                boost::thread exec_thread([=](){
+            for(size_t i=0; i<8; i++){
+                //boost::thread exec_thread([=](){
+                grp.create_thread([=](){
                     for(size_t j=0; j<_threads[i].size(); j++){
                         _kernel(_threads[i][j]);
                     }
                 });
-                grp.add_thread(&exec_thread);
-            } 
-            grp.join_all();           
+                //grp.add_thread(&exec_thread);
+            }
+            if(_implicit_barrier){ 
+                grp.join_all();
+            }           
             
             mob_root._kernel_finished(_name);
         });

@@ -16,10 +16,11 @@ namespace mob
         mob_kernel_finished _exit_kernel;
         
         bool _threads_need_update;
+        bool _implicit_barrier;
         std::vector< std::vector<size_t> > _threads;
         
     public:
-        kernel(std::string name, mob_kernel_func kernel);
+        kernel(std::string name, mob_kernel_func kernel, bool implicit_barrier = false);
         ~kernel();
         
         void set_exit_kernel(mob_kernel_finished kernel);
