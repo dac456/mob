@@ -47,6 +47,9 @@ namespace mob
         
         bool _dirty;
         
+        std::mutex _gmem_set;
+        std::mutex _gmem_get;
+        
     public:
         gmem(std::string name, root& mob_root, const size_t sz) : _sz(sz){
             _name = name;
@@ -78,6 +81,8 @@ namespace mob
         }
         
         void set(size_t idx, T val){
+            _gmem_set.lock();
+
             //TODO: update local (or remote) node with new value (?)
             //      need some way of tracking which node is responsible for which tasks
             //      -> broadcast from each node each time task assignment is updated?
@@ -92,13 +97,14 @@ namespace mob
             (*(mem+idx)) = val;
 
             //Update remote if not our task  
-            TaskList* task_list = segment.find<TaskList>("task_list").first;  
+            TaskList* task_list = segment.find<TaskList>("task_list").first; 
+            
             
             //TODO: always send to make data capture easier. in practice should not do this
-            //if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
+            if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
                 _send_mem(_name, val, idx);
-                usleep(250000);
-            //}
+            }
+            _gmem_set.unlock();             
         }
         
         void fetch(){
@@ -130,28 +136,30 @@ namespace mob
         }
         
         const T operator[] (const int idx){
+            //_gmem_get.lock();
             assert(idx >= 0 && idx < _sz);
             try{
                 bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
                 TaskList* task_list = segment.find<TaskList>("task_list").first;  
                 
-                //if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
+                if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
                     std::pair<T*, bip::managed_shared_memory::size_type> res;
                     
                     res = segment.find<T>(_name.c_str());
                     T* mem = res.first;
                     
                     return (*(mem+idx));
-                /*}
+                }
                 else{
                     _waiting_for_remote = std::make_pair(idx, true);
                     
                     return _get_mem(_name, idx);
-                }*/
+                }
             }
             catch(bip::interprocess_exception& e){
                 std::cout << e.what() << std::endl;
-            }            
+            }          
+            //_gmem_get.unlock();  
         }
         
         void remote_get_notify(size_t task_idx, std::string var_name){
@@ -174,7 +182,7 @@ namespace mob
         }
         
         void _send_mem(std::string var_name, T val, size_t task_idx){
-            node_message msg(PRGM_SET_MEM);
+            node_message* msg = new node_message(PRGM_SET_MEM);
             
             set_mem msg_data;
             msg_data.prgm_name = _mob_root->get_name();
@@ -187,7 +195,7 @@ namespace mob
             boost::archive::text_oarchive oa(msg_stream);
             oa << msg_data;
             
-            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            msg->set_data(msg_stream.str().c_str(), msg_stream.str().size());
             
             _mob_root->_prgm_send_mem(msg);
 

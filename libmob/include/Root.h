@@ -48,6 +48,8 @@ namespace mob
         boost::signals2::signal<void(size_t,std::string)> _sig_remote_get;
         
         std::mutex _shared_mem_write;
+        std::mutex _host_get_mem_mtx;
+        std::stack<node_message*> _mem_send_queue;
         
     public:
         root();
@@ -76,7 +78,8 @@ namespace mob
         void _handle_host_get_mem(node_message& msg);
         
         void _host_get_mem(prgm_var_data data, size_t sz);
-        void _prgm_send_mem(node_message& msg);
+        void _prgm_send_mem(node_message* msg);
+        void _handle_mem_send(const boost::system::error_code& err, const size_t bytesSent);
         void _prgm_get_mem(node_message& msg);
         void _kernel_started(std::string kernel);
         void _kernel_finished(std::string kernel);

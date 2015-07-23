@@ -21,8 +21,9 @@ namespace mob
         std::map<std::string, bool> _node_map;
         std::map<std::pair<std::string,std::string>, volatile bool> _kernel_status_map;
         
-        volatile bool _waiting_for_capture;
-        volatile size_t _capture_count;
+        //volatile bool _waiting_for_capture;
+        //volatile size_t _capture_count;
+        std::map<std::pair<std::string,std::string>, std::pair<size_t, volatile bool>> _capture_status_map;
         
         std::vector<float> _capture_buffer_float;
         std::vector<float4> _capture_buffer_float4;

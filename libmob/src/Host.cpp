@@ -5,10 +5,13 @@ namespace mob
     
     host::host() : _socket(_service, asio::ip::udp::endpoint(asio::ip::udp::v4(), HOST_PORT)){
         _first_host = "";
-        _capture_count = 0;
+        //_capture_count = 0;
         _buffer.resize((1024*1024)*16);
         
         //Start an async server so we can talk to the network
+        _socket.set_option(asio::ip::udp::socket::reuse_address(true));
+        _socket.set_option(asio::socket_base::broadcast(true));        
+        
         _start_accept();
         boost::thread srv(boost::bind(&asio::io_service::run, &_service));        
     }
@@ -49,12 +52,15 @@ namespace mob
             std::cout << "broadcast error" << std::endl;
         }
         
-        _kernel_status_map[std::make_pair(prgm,kernel)] = false;           
+        _kernel_status_map[std::make_pair(prgm,kernel)] = false;      
     }
     
     std::vector<float> host::capture_float(std::string prgm, std::string var){
         node_message msg(HOST_GET_MEM);
-        _waiting_for_capture = true;
+        //_waiting_for_capture = true;
+        for(auto node : _node_map){
+            _capture_status_map[std::make_pair(node.first, var)] = std::make_pair(0, false);     
+        }        
         
         prgm_var_data msg_data;
         msg_data.host_name = asio::ip::host_name();
@@ -69,21 +75,28 @@ namespace mob
         msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());   
         std::pair<char*, size_t> msg_pair = msg.encode();
         
-        asio::ip::udp::resolver res(_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), _first_host, boost::lexical_cast<std::string>(PRGM_PORT));
-        asio::ip::udp::endpoint ep = *res.resolve(query);
+        //asio::ip::udp::resolver res(_service);
+        //asio::ip::udp::resolver::query query(asio::ip::udp::v4(), _first_host, boost::lexical_cast<std::string>(PRGM_PORT));
+        //asio::ip::udp::endpoint ep = *res.resolve(query);
+        asio::ip::udp::endpoint ep(asio::ip::address_v4::broadcast(), PRGM_PORT);
         
         _socket.async_send_to(asio::buffer(msg_pair.first, msg_pair.second), ep, boost::bind(&host::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));  
         delete[] msg_pair.first;
         
-       while(_waiting_for_capture);
+       //while(_waiting_for_capture);
+       for(auto node: _node_map){
+           while(!_capture_status_map[std::make_pair(node.first, var)].second);
+       }
        
        return _capture_buffer_float;
     } 
     
     std::vector<float4> host::capture_float4(std::string prgm, std::string var){
         node_message msg(HOST_GET_MEM);
-        _waiting_for_capture = true;
+        //_waiting_for_capture = true;
+        for(auto node : _node_map){
+            _capture_status_map[std::make_pair(node.first, var)] = std::make_pair(0, false);     
+        }           
         
         prgm_var_data msg_data;
         msg_data.host_name = asio::ip::host_name();
@@ -98,21 +111,40 @@ namespace mob
         msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());   
         std::pair<char*, size_t> msg_pair = msg.encode();
         
-        asio::ip::udp::resolver res(_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), _first_host, boost::lexical_cast<std::string>(PRGM_PORT));
-        asio::ip::udp::endpoint ep = *res.resolve(query);
+        //asio::ip::udp::resolver res(_service);
+        //asio::ip::udp::resolver::query query(asio::ip::udp::v4(), _first_host, boost::lexical_cast<std::string>(PRGM_PORT));
+        //asio::ip::udp::endpoint ep = *res.resolve(query);
+        asio::ip::udp::endpoint ep(asio::ip::address_v4::broadcast(), PRGM_PORT);
         
         _socket.async_send_to(asio::buffer(msg_pair.first, msg_pair.second), ep, boost::bind(&host::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));  
         delete[] msg_pair.first;
         
-       while(_waiting_for_capture);
+       //while(_waiting_for_capture);
+       for(auto node: _node_map){
+           std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+           std::cout << node.first << std::endl;
+           while(!_capture_status_map[std::make_pair(node.first, var)].second){
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+                if(millis > 2000){
+                    break;
+                }
+           }
+       }       
 
        return _capture_buffer_float4;
     }     
     
     void host::wait(std::string prgm, std::string kernel){
         std::cout << "host waiting..." << std::endl;
-        while(!_kernel_status_map.at(std::make_pair(prgm,kernel)));
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        while(!_kernel_status_map.at(std::make_pair(prgm,kernel))){
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+            if(millis > 5000){
+                break;
+            }           
+        }
         std::cout << "kernel finished" << std::endl;
     }
     
@@ -162,7 +194,7 @@ namespace mob
     }
     
     void host::_handle_get_mem(node_message& msg){
-        //std::cout << "_handle_get_mem" << std::endl;
+        std::cout << "_handle_get_mem" << std::endl;
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -170,29 +202,48 @@ namespace mob
         boost::archive::text_iarchive ia(msg_stream);
         prgm_var_data data;
         ia >> data;
+        std::cout << data.host_name << std::endl;
         
         //TODO: needs to be way more robust
         if(data.var_type == "float"){
-            //_capture_buffer_float.clear();
-            //_capture_buffer_float = data.var_float
-            _capture_buffer_float.resize(data.end);
-            std::copy(data.var_float.begin(), data.var_float.end(), _capture_buffer_float.begin() + data.start);
+            size_t max = (*std::max_element(data.var_indices.begin(), data.var_indices.end())) + 1;
+            if(max > _capture_buffer_float.size()){
+                _capture_buffer_float.resize(max);
+            }  
+            //std::copy(data.var_float.begin(), data.var_float.end(), _capture_buffer_float.begin() + data.start);
+            size_t i=0;
+            for(auto v : data.var_float){
+                _capture_buffer_float[data.var_indices[i]] = v;
+                i++;
+            }
         }
         else if(data.var_type == "float4"){
-            //_capture_buffer_float4.clear();
-            //_capture_buffer_float4 = data.var_float4;     
-            _capture_buffer_float4.resize(data.end); 
-            std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
+            size_t max = (*std::max_element(data.var_indices.begin(), data.var_indices.end())) + 1;
+            if(max > _capture_buffer_float4.size()){
+                _capture_buffer_float4.resize(max);
+            }   
+
+            //std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
+            size_t i=0;
+            for(auto v : data.var_float4){
+                _capture_buffer_float4[data.var_indices[i]] = v;
+                i++;
+            }            
         }
         
-        if(_capture_count >= 3){
+        /*if(_capture_count >= 3){
             _waiting_for_capture = false;  
         }
-        _capture_count = (_capture_count + 1) % 4;
+        _capture_count = (_capture_count + 1) % 4;*/
+        _capture_status_map[std::make_pair(data.host_name, data.var_name)].first++;
+        if(_capture_status_map[std::make_pair(data.host_name, data.var_name)].first >= 16){
+            _capture_status_map[std::make_pair(data.host_name, data.var_name)].first = 0;
+            _capture_status_map[std::make_pair(data.host_name, data.var_name)].second = true;
+        }
     }
     
     void host::_handle_kernel_finished(node_message& msg){
-        //std::cout << "host handle kernel finished" << std::endl;
+        std::cout << "host handle kernel finished" << std::endl;
         
          //Decode message
         std::stringstream msg_stream;

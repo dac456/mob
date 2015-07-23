@@ -10,6 +10,8 @@
 #include <utility>
 #include <map>
 #include <mutex>
+#include <stack>
+#include <chrono>
 
 #include <boost/asio.hpp>
 namespace asio = boost::asio;
@@ -68,7 +70,8 @@ struct prgm_var_data{
     std::string var_name;
     std::string var_type;
     
-    size_t start, end;
+    //size_t start, end;
+    std::vector<size_t> var_indices;
     std::vector<float> var_float;
     std::vector<mob::float4> var_float4;
     
@@ -80,8 +83,9 @@ struct prgm_var_data{
         ar & var_type;
         ar & var_float;
         ar & var_float4;
-        ar & start;
-        ar & end;
+        ar & var_indices;
+        //ar & start;
+        //ar & end;
     }    
 };
 

@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
     
     
     //TODO: allow indicating in/out for data
-    //      also hepers for converting C-style arrays to gmem arrays
+    //      also helpers for converting C-style arrays to gmem arrays
     mob::gmem<float4> v("v", mob, 8000); 
     mob::gmem<float4> p("p", mob, 8000);
     mob::gmem<float4> x("x", mob, 8000);

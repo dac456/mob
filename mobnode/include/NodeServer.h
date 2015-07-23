@@ -68,6 +68,9 @@ namespace MobNode
         std::map<std::string, bool> _nodeMap;
         std::map<std::string, proc_info> _programMap;
         
+        std::mutex _prgm_set_mem_mutex;
+        std::mutex _prgm_get_mem_mutex;
+        
     public:
         NodeServer(asio::io_service& service);
         ~NodeServer();

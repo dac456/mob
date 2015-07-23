@@ -195,6 +195,8 @@ namespace MobNode
     }
     
     void NodeServer::_handleMsgPrgmSetMem(mob::node_message& msg){
+        _prgm_set_mem_mutex.lock();
+        
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -218,9 +220,13 @@ namespace MobNode
             
             (*(val+mem.idx)) = mob::float4(mem.val);  
         }
+        
+        _prgm_set_mem_mutex.unlock();
     }
     
     void NodeServer::_handleMsgPrgmGetMem(mob::node_message& msg){
+        //_prgm_get_mem_mutex.lock();
+        
         //Decode message
         std::stringstream msg_stream;
         msg_stream << msg.get_data();
@@ -262,8 +268,11 @@ namespace MobNode
         asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(mem.node_name), boost::lexical_cast<std::string>(PRGM_PORT));
         asio::ip::udp::endpoint ep = *resolver.resolve(query);
         
-        _socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
+        //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
+        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
         delete[] msgPair.first;
+        
+        //_prgm_get_mem_mutex.unlock();
     }
     
     void NodeServer::_handleMsgLaunchPrgm(mob::node_message& msg){
