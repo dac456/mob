@@ -8,9 +8,12 @@ namespace MobNode
         /*asio::ip::udp::resolver resolver(service);
         asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, boost::lexical_cast<std::string>(NODE_PORT));
 
-        asio::ip::udp::endpoint receiverEndpoint = *resolver.resolve(query);
+        asio::ip::udp::endpoint receiverEndpoint = *resolver.resolve(query);*/
 
-        _socket.open(asio::ip::udp::v4());*/
+        _socket.open(asio::ip::udp::v4());
+        
+        _socket.set_option(asio::ip::udp::socket::reuse_address(true));
+        _socket.set_option(asio::socket_base::broadcast(true));        
         
         //Broadcast a NODE_PING message and find all nodes on network
         //TODO: move to method and broadcast on timer
@@ -39,11 +42,24 @@ namespace MobNode
     }
 
     NodeClient::~NodeClient(){
-        //_socket.close();
+        _socket.close();
     }
 
     void NodeClient::_onSend(const boost::system::error_code& err, const size_t bytesSent){
         //_socket.close();
+    }
+    
+    void NodeClient::broadcastPing(){
+        mob::node_message msg(mob::NODE_PING);
+        
+        std::string nodeName = asio::ip::host_name();
+        msg.set_data(nodeName.c_str(), nodeName.length());
+        
+        std::pair<char*, size_t> msgPair = msg.encode();
+
+        asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
+        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), senderEndpoint);
+    
     }
 
 }

@@ -20,7 +20,25 @@ int main(int argc, char* argv[]){
     //srv.join();
     //cli.join();
 
-    for(;;); //Keep the main thread busy
+    for(;;){
+        #ifdef MOB_PLATFORM_GNU
+        {
+            std::ifstream fin("/proc/loadavg", std::ios::in);
+            double instant;
+            double five_min;
+            fin >> instant >> five_min;
+            fin.close();
+        }
+        #endif
+        
+        /*std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        
+        auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();*/
+        
+        sleep(5);
+        client->broadcastPing();
+    }
     
     return 0;
 }

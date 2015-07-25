@@ -191,6 +191,10 @@ namespace mob
                     _handle_prgm_get_mem(msg);
                     break;
                     
+                case PRGM_MOV_TASKS:
+                    _handle_prgm_move_tasks(msg);
+                    break;
+                    
                 case HOST_EXEC_KERNEL:
                     _handle_host_exec_kernel(msg);
                     break;
@@ -223,26 +227,57 @@ namespace mob
         msg_stream << msg.get_data();
         
         boost::archive::text_iarchive ia(msg_stream);
-        mob::set_mem mem;
-        ia >> mem;
+        mob::set_mem data;
+        ia >> data;
         
         //Set shared local memory
-        bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
-        if(mem.val_type == "float"){  
-            auto res = segment.find<float>(mem.var_name.c_str());
+        bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
+        if(data.val_type == "float"){  
+            auto res = segment.find<float>(data.var_name.c_str());
             float* val = res.first;
     
-            (*(val+mem.idx)) = atof(mem.val.c_str());  
+            (*(val+data.idx)) = atof(data.val.c_str());  
+            
+            //Flag as miss
+            //gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
+            //mem->_locality_miss(data.node_name, data.idx);
         }
-        else if(mem.val_type == "float4"){
-            auto res = segment.find<float4>(mem.var_name.c_str());
+        else if(data.val_type == "float4"){
+            auto res = segment.find<float4>(data.var_name.c_str());
             float4* val = res.first;
     
-            (*(val+mem.idx)) = float4(mem.val);             
-        }   
+            (*(val+data.idx)) = float4(data.val); 
+            
+            //Flag as miss
+            //gmem<float4>* mem = (gmem<float4>*)_allocated_mem.at(data.var_name);
+            //mem->_locality_miss(data.node_name, data.idx);            
+        }
         
         //Signal gmem that the data is updated
-        _sig_remote_get(mem.idx, mem.var_name);   
+        _sig_remote_get(data.node_name, data.idx, data.var_name);   
+    }
+    
+    void root::_handle_prgm_move_tasks(node_message& msg){
+        std::cout << "_handle_prgm_move_tasks" << std::endl;
+        
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        node_task_data data;
+        ia >> data; 
+        
+        bip::managed_shared_memory segment(bip::open_only, _prgm_name.c_str());      
+        TaskList* mem = segment.find<TaskList>("task_list").first;        
+        
+        //Remove elements that we moved        
+        for(auto idx : data.task_list){
+            mem->erase(std::find(mem->begin(), mem->end(), idx));
+        }
+        
+        //Reset moving status
+        _sig_remote_move(data.task_list[0]);
     }
     
     void root::_handle_host_exec_kernel(node_message& msg){
@@ -393,11 +428,11 @@ namespace mob
         //_host_get_mem_mtx.unlock();
     }
     
-    void root::_prgm_send_mem(node_message* msg){
+    void root::_prgm_send_mem(node_message& msg){
         //_shared_mem_write.lock();
-        _mem_send_queue.push(msg);
+        //_mem_send_queue.push(msg);
         
-        if(_mem_send_queue.size() == 1){
+        //if(_mem_send_queue.size() == 1){
             //boost::system::error_code error;
             //asio::ip::udp::socket broad_socket(_service);
             //broad_socket.open(asio::ip::udp::v4(), error);
@@ -405,7 +440,7 @@ namespace mob
                 //broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
                 //broad_socket.set_option(asio::socket_base::broadcast(true));
                 
-                std::pair<char*, size_t> msg_pair = msg->encode();
+                std::pair<char*, size_t> msg_pair = msg.encode();
     
                 asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
                 _socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
@@ -417,7 +452,7 @@ namespace mob
             //else{
             //   std::cout << "broadcast error" << std::endl;
             //}       
-        }     
+        //}     
         //_shared_mem_write.unlock();
     }
     
@@ -474,6 +509,32 @@ namespace mob
         else{
             std::cout << "broadcast error" << std::endl;
         }           
+    }
+    
+    void root::_prgm_mov_task(std::string to_node, size_t idx){
+        std::cout << "_prgm_mov_task " << to_node << std::endl;
+        
+        node_message msg(PRGM_MOV_TASKS);
+        
+        node_task_data data;
+        data.host_name = asio::ip::host_name();
+        data.prgm_name = _prgm_name;
+        data.task_list.push_back(idx);
+        
+        std::stringstream msg_stream;
+        boost::archive::text_oarchive oa(msg_stream);
+        oa << data;
+                
+        msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
+        std::pair<char*, size_t> msg_pair = msg.encode();
+        
+        asio::ip::udp::resolver resolver(_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), to_node, boost::lexical_cast<std::string>(NODE_PORT));
+        asio::ip::udp::endpoint ep = *resolver.resolve(query);
+        
+        _socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), ep);
+        
+        delete[] msg_pair.first;        
     }
     
     void root::_kernel_started(std::string kernel){
@@ -549,6 +610,10 @@ namespace mob
     
     boost::signals2::connection root::_connect_remote_get(const remote_get_event& e){
         return _sig_remote_get.connect(e);
+    }
+    
+    boost::signals2::connection root::_connect_remote_move(const remote_move_event& e){
+        return _sig_remote_move.connect(e);
     }
         
 }

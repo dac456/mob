@@ -6,17 +6,6 @@
 namespace mob
 {
     
-    struct node_task_data{
-        std::string prgm_name;
-        std::vector<size_t> task_list;
-        
-        template<typename Archive>
-        void serialize(Archive& ar, const unsigned int version){
-            ar & prgm_name;
-            ar & task_list;
-        }
-    };
-    
     struct prgm_started_data{
         std::string node_name;
         std::string prgm_name;
@@ -45,7 +34,8 @@ namespace mob
         std::map<std::string, kernel*> _kernel_map;
         std::map<std::string, void*> _allocated_mem;
         
-        boost::signals2::signal<void(size_t,std::string)> _sig_remote_get;
+        boost::signals2::signal<void(std::string,size_t,std::string)> _sig_remote_get;
+        boost::signals2::signal<void(size_t)> _sig_remote_move;
         
         std::mutex _shared_mem_write;
         std::mutex _host_get_mem_mtx;
@@ -74,18 +64,22 @@ namespace mob
         
         //void _handle_node_ping_lib(node_message& msg);
         void _handle_prgm_get_mem(node_message& msg);
+        void _handle_prgm_move_tasks(node_message& msg);
         void _handle_host_exec_kernel(node_message& msg);
         void _handle_host_get_mem(node_message& msg);
         
         void _host_get_mem(prgm_var_data data, size_t sz);
-        void _prgm_send_mem(node_message* msg);
+        void _prgm_send_mem(node_message& msg);
         void _handle_mem_send(const boost::system::error_code& err, const size_t bytesSent);
         void _prgm_get_mem(node_message& msg);
+        void _prgm_mov_task(std::string to_node, size_t idx);
         void _kernel_started(std::string kernel);
         void _kernel_finished(std::string kernel);
         
-        typedef boost::signals2::signal<void(size_t,std::string)>::slot_type remote_get_event;
+        typedef boost::signals2::signal<void(std::string,size_t,std::string)>::slot_type remote_get_event;
+        typedef boost::signals2::signal<void(size_t)>::slot_type remote_move_event;
         boost::signals2::connection _connect_remote_get(const remote_get_event& e);
+        boost::signals2::connection _connect_remote_move(const remote_move_event& e);
         
         friend class kernel;
         template<typename T> friend class gmem; //TODO: breaks export (I think)

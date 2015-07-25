@@ -14,6 +14,8 @@ namespace MobNode
     public:
         NodeClient(asio::io_service& service, std::string addr);
         ~NodeClient();
+        
+        void broadcastPing();
 
     private:
         void _onSend(const boost::system::error_code& err, const size_t bytesSent);

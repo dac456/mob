@@ -42,8 +42,12 @@ namespace mob
         std::string _mem_name;
         root* _mob_root;
         
+        std::map<size_t, size_t> _ref_count;
+        std::map<size_t, std::pair<size_t,bool>> _miss_map;
+        
         std::pair<size_t, volatile bool> _waiting_for_remote;
         boost::signals2::connection _remote_get;
+        boost::signals2::connection _remote_move;
         
         bool _dirty;
         
@@ -62,7 +66,14 @@ namespace mob
             _mob_root = &mob_root;
             _mob_root->_allocated_mem[name] = this;
 
-            _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1, _2));
+            //Connect signal for remote get
+            _remote_get = _mob_root->_connect_remote_get(boost::bind(&gmem::remote_get_notify, this, _1, _2, _3));
+            _remote_move = _mob_root->_connect_remote_move(boost::bind(&gmem::remote_move_notify, this, _1));
+            
+            //Initialize ref counts
+            for(size_t i=0; i<sz; i++){
+                _ref_count[i] = 0;
+            }
         }
         
         ~gmem(){
@@ -138,6 +149,8 @@ namespace mob
         const T operator[] (const int idx){
             //_gmem_get.lock();
             assert(idx >= 0 && idx < _sz);
+            _ref_count[idx]++;
+            
             try{
                 bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
                 TaskList* task_list = segment.find<TaskList>("task_list").first;  
@@ -162,10 +175,17 @@ namespace mob
             //_gmem_get.unlock();  
         }
         
-        void remote_get_notify(size_t task_idx, std::string var_name){
+        void remote_get_notify(std::string from_node, size_t task_idx, std::string var_name){
             //If this is the droid we're searching for...
-            if(_waiting_for_remote.first == task_idx && var_name == _name){
+            if(_waiting_for_remote.first == task_idx && var_name == _name && from_node != asio::ip::host_name()){
                 _waiting_for_remote.second = false;
+                _locality_miss(from_node, task_idx);
+            }
+        }
+        
+        void remote_move_notify(size_t task_idx){
+            if(_miss_map.count(task_idx)){
+                _miss_map.at(task_idx).second = false;
             }
         }
         
@@ -182,7 +202,7 @@ namespace mob
         }
         
         void _send_mem(std::string var_name, T val, size_t task_idx){
-            node_message* msg = new node_message(PRGM_SET_MEM);
+            node_message msg(PRGM_SET_MEM);
             
             set_mem msg_data;
             msg_data.prgm_name = _mob_root->get_name();
@@ -195,7 +215,7 @@ namespace mob
             boost::archive::text_oarchive oa(msg_stream);
             oa << msg_data;
             
-            msg->set_data(msg_stream.str().c_str(), msg_stream.str().size());
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
             
             _mob_root->_prgm_send_mem(msg);
 
@@ -237,6 +257,25 @@ namespace mob
             
             return (*(mem+task_idx));                          
         }
+        
+        void _locality_miss(std::string from_node, size_t idx){
+            //std::cout << "_locality_miss " << idx << " " << from_node << std::endl;
+            if(!_miss_map.count(idx)){
+                _miss_map[idx] = std::make_pair(1, false);
+            }
+            else{
+                _miss_map.at(idx).first++;
+            }
+            
+            float miss_ratio = float(_miss_map.at(idx).first) / float(_ref_count[idx]);
+            //std::cout << float(_miss_map.at(idx).first) << " " << float(_ref_count[idx]) << " " << miss_ratio << std::endl;
+            if(miss_ratio > 0.5f && _ref_count[idx] > 5 && !_miss_map.at(idx).second){
+                _mob_root->_prgm_mov_task(from_node, idx);
+                _miss_map.at(idx).second = true;
+            }
+        }
+        
+        //friend class root;
         
     };
     

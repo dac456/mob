@@ -14,6 +14,7 @@ namespace mob
         NODE_START_PRGM,     //ask node to start a program locally
         NODE_SET_TASKS,      //set task list for a program on a node
         PRGM_SET_TASKS,      //set task list in a program from a node
+        PRGM_MOV_TASKS,      //move task(s) to another node
         PRGM_GET_MEM,        //program requests remote data
         PRGM_SET_MEM,        //program sets remote data
         PRGM_STARTED,        //notify that the program has started running locally

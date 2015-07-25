@@ -31,17 +31,6 @@ namespace MobNode
         }        
     };
     
-    struct node_task_data{
-        std::string prgm_name;
-        std::vector<size_t> task_list;
-        
-        template<typename Archive>
-        void serialize(Archive& ar, const unsigned int version){
-            ar & prgm_name;
-            ar & task_list;
-        }
-    };   
-    
     struct prgm_started_data{
         std::string node_name;
         std::string prgm_name;
@@ -95,6 +84,7 @@ namespace MobNode
         void _handleMsgLaunchPrgm(mob::node_message& msg);
         void _handleMsgStartPrgm(mob::node_message& msg);
         void _handleMsgSetTasks(mob::node_message& msg);
+        void _handleMsgPrgmMoveTasks(mob::node_message& msg);
         void _handleMsgPrgmStarted(mob::node_message& msg);
         void _handleMsgPrgmRegKernel(mob::node_message& msg);
         void _handleMsgKernelStarted(mob::node_message& msg);

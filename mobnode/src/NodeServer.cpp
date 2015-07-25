@@ -70,6 +70,10 @@ namespace MobNode
                 case mob::NODE_SET_TASKS:
                     _handleMsgSetTasks(msg);
                     break;
+                    
+                case mob::PRGM_MOV_TASKS:
+                    _handleMsgPrgmMoveTasks(msg);
+                    break;
                 
                 case mob::PRGM_STARTED:
                     _handleMsgPrgmStarted(msg);
@@ -252,6 +256,10 @@ namespace MobNode
             mem.val = (*(val+mem.idx)).str();        
         }
         
+        //Swap node name
+        std::string toNode = mem.node_name;
+        mem.node_name = asio::ip::host_name(); //fromNode
+        
         //Re-serialize data
         std::stringstream msg_stream_out;
         boost::archive::text_oarchive oa(msg_stream_out);
@@ -265,7 +273,7 @@ namespace MobNode
         std::pair<char*, size_t> msgPair = msgOut.encode();
         
         asio::ip::udp::resolver resolver(*_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), std::string(mem.node_name), boost::lexical_cast<std::string>(PRGM_PORT));
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), toNode, boost::lexical_cast<std::string>(PRGM_PORT));
         asio::ip::udp::endpoint ep = *resolver.resolve(query);
         
         //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&NodeServer::_handleSend, this, asio::placeholders::error, asio::placeholders::bytes_transferred));                
@@ -531,6 +539,43 @@ namespace MobNode
                 mem->push_back(data.task_list[i]);
             }
         });
+    }
+    
+    void NodeServer::_handleMsgPrgmMoveTasks(mob::node_message& msg){      
+        //Decode message
+        std::stringstream msgStream;
+        msgStream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msgStream);
+        node_task_data data;
+        ia >> data; 
+        
+        //Add new tasks
+        bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());      
+        TaskList* mem = segment.find<TaskList>("task_list").first;
+        
+        //for(size_t i=0; i<data.task_list.size(); i++){
+            mem->push_back(data.task_list[0]);
+        //}          
+        
+        //TODO: notify kernels that the tasks were updated   
+        
+        //Ping back
+        mob::node_message msgOut(mob::PRGM_MOV_TASKS);
+        
+        std::stringstream msgStreamOut;
+        boost::archive::text_oarchive oa(msgStreamOut);
+        oa << data;
+        
+        msgOut.set_data(msgStreamOut.str().c_str(), msgStreamOut.str().size());
+        std::pair<char*, size_t> msgPair = msgOut.encode();
+        
+        asio::ip::udp::resolver resolver(*_service);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(PRGM_PORT));
+        asio::ip::udp::endpoint ep = *resolver.resolve(query);
+        
+        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+        delete[] msgPair.first;        
     }
     
     void NodeServer::_handleMsgPrgmStarted(mob::node_message& msg){

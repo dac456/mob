@@ -5,6 +5,12 @@
     #define _WIN32_WINNT 0x0501
 #endif
 
+#if defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
+    #define MOB_PLATFORM_WIN32
+#elif defined(__GNUC__)
+    #define MOB_PLATFORM_GNU
+#endif
+
 #include <memory>
 #include <vector>
 #include <utility>
@@ -103,5 +109,18 @@ struct kernel_status_data{
         ar & status;
     }          
 };
+
+struct node_task_data{
+    std::string host_name;
+    std::string prgm_name;
+    std::vector<size_t> task_list;
+    
+    template<typename Archive>
+    void serialize(Archive& ar, const unsigned int version){
+        ar & host_name;
+        ar & prgm_name;
+        ar & task_list;
+    }
+};   
 
 #endif

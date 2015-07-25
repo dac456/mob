@@ -39,11 +39,13 @@ int main(int argc, char* argv[])
     
     mob::kernel integrate_forces("integrate_forces", [&v, &p, &x, dt](size_t global_index){
         
-        v.set(global_index, v[global_index] + (float4(0.0f, -9.8f, 0.0f, 1.0f) * 2.0f * dt));
+        if(global_index+1 < 8000){
+        v.set(global_index, v[global_index+1] + (float4(0.0f, -9.8f, 0.0f, 1.0f) * 2.0f * dt));
         //v.set(global_index, float4(v[global_index].x, v[global_index].y, v[global_index].z, 1.0f));
         
-        p.set(global_index, p[global_index] + v[global_index] * dt);
-        //p.set(global_index, float4(p[global_index].x, p[global_index].y, p[global_index].z, 1.0f));       
+        p.set(global_index, p[global_index+1] + v[global_index+1] * dt);
+        //p.set(global_index, float4(p[global_index].x, p[global_index].y, p[global_index].z, 1.0f));   
+        }    
 
     }, true);
     

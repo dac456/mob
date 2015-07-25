@@ -22,6 +22,10 @@ namespace mob
             mob_root._kernel_started(_name);          
 
             if(_threads_need_update){
+                for(auto t : _threads){
+                    t.clear();
+                }
+                
                 bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());      
                 TaskList* mem = segment.find<TaskList>("task_list").first;            
                 
@@ -36,7 +40,7 @@ namespace mob
                     t = (t + 1) % 8;
                 }
                 
-                _threads_need_update = false;
+                //_threads_need_update = false;
             }
             
             boost::thread_group grp;

@@ -3,13 +3,6 @@
 
 #include "FrameworkCommon.h"
 
-
-#if defined(__WIN32__) || defined(_WIN32) || defined(WIN32)
-    #define MOB_PLATFORM_WIN32
-#elif defined(__GNUC__)
-    #define MOB_PLATFORM_GNU
-#endif
-
 #ifdef MOBAPI_EXPORT
     #ifdef MOB_PLATFORM_WIN32
         #define MOBAPI __declspec(dllexport)
