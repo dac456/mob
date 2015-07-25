@@ -91,7 +91,7 @@ namespace mob
        return _capture_buffer_float;
     } 
     
-    std::vector<float4> host::capture_float4(std::string prgm, std::string var){
+    std::vector<float4> host::capture_float4(std::string prgm, std::string var, size_t timeout){
         node_message msg(HOST_GET_MEM);
         //_waiting_for_capture = true;
         for(auto node : _node_map){
@@ -126,7 +126,7 @@ namespace mob
            while(!_capture_status_map[std::make_pair(node.first, var)].second){
                 std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
                 auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-                if(millis > 2000){
+                if(millis > timeout){
                     break;
                 }
            }

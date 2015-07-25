@@ -327,7 +327,6 @@ namespace mob
  
         size_t block_size = floor(float(task_list->size())/16.0f);
         for(size_t i=0; i<16; i++){
-            std::cout << i << std::endl;
             size_t start = i*block_size;
             size_t end = start+block_size;
         
@@ -370,7 +369,7 @@ namespace mob
             data_out.var_name = data.var_name;
                        
             //Ping back
-            std::cout << "ping back" << std::endl;
+            //std::cout << "ping back" << std::endl;
             node_message msg_out(HOST_GET_MEM);
             
             std::stringstream msg_stream_out;
@@ -384,12 +383,12 @@ namespace mob
             asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(HOST_PORT));
             asio::ip::udp::endpoint ep = *resolver.resolve(query);
             
-            std::cout << "sending..." << std::endl;
+            //std::cout << "sending..." << std::endl;
             //_socket.async_send_to(asio::buffer(msgPair.first, msgPair.second), ep, boost::bind(&root::_handle_send, this, asio::placeholders::error, asio::placeholders::bytes_transferred));
             _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
             
             delete[] msgPair.first;
-            std::cout << "end " << std::endl;  
+            //std::cout << "end " << std::endl;  
         }      
         //_host_get_mem_mtx.unlock();
     }

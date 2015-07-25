@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
         for(size_t j=0; j<20; j++){
             for(size_t k=0; k<20; k++){
                 v.init(idx, float4(0.0f, 0.0f, 0.0f, 1.0f));
-                p.init(idx, float4(d*float(i) - (5.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
-                x.init(idx, float4(d*float(i) - (5.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
+                p.init(idx, float4(d*float(i) - (20.0f/2.0f),d*float(j), d*float(k) - (20.0f/2.0f), 1.0f));
+                x.init(idx, float4(d*float(i) - (20.0f/2.0f),d*float(j), d*float(k) - (20.0f/2.0f), 1.0f));
                 
                 idx++;
             }
