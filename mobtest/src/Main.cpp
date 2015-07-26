@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
     float dt = 1.0f/60.0f;
     
-    mob::kernel integrate_forces("integrate_forces", [&v, &p, &x, dt](size_t global_index){
+    mob::kernel integrate_forces("integrate_forces", [&v, &p, &x, dt](size_t global_index, size_t local_index){
         
         v.set(global_index, v[global_index] + (float4(0.0f, -9.8f, 0.0f, 1.0f) * 2.0f * dt));
         
@@ -48,26 +48,41 @@ int main(int argc, char* argv[])
 
     }, true);
     
-    mob::kernel project_particles("project_particles", [&p, &c](size_t global_index){
+    boost::barrier bar1(4);
+    boost::barrier bar2(4);
+    float4 local_block[4];
+    mob::kernel project_particles("project_particles", [&p, &c, &local_block, &bar1, &bar2](size_t global_index, size_t local_index){
         
         for(size_t k=0; k<5; k++){
+            size_t nb = 200/4;
+            
             size_t nc = 0;
             float4 d_avg(0.0f, 0.0f, 0.0f, 0.0f);
             
-            for(size_t i=0; i<200; i++){
-                float4 delta = p[i] - p[global_index];
-                float delta_length = delta.length();
+            for(int j=0; j<nb; j++){
+                //std::cout << (j*4)+local_index << std::endl;
+                local_block[local_index] = p[(j*4)+local_index];
+                bar1.wait();
                 
-                if(!isnan(delta_length)){
-                    float C = delta_length - 2.0f;
-                    if(C <= 0.0f){
-                        float s = 0.5f;
+                for(size_t i=0; i<4; i++){
+                    if(i != local_index){
+                        float4 delta = local_block[i] - p[global_index];
+                        float delta_length = delta.length();
                         
-                        d_avg = d_avg + ((delta/delta_length)*s*C * (1.0f - (1.0f - pow(0.9, k))));
-                        d_avg.w = 1.0f;
-                        nc++;
+                        if(!isnan(delta_length)){
+                            float C = delta_length - 2.0f;
+                            if(C <= 0.0f){
+                                float s = 0.5f;
+                                
+                                d_avg = d_avg + ((delta/delta_length)*s*C * (1.0f - (1.0f - pow(0.9, k))));
+                                d_avg.w = 1.0f;
+                                nc++;
+                            }
+                        }
                     }
                 }
+                
+                bar2.wait();
             }
             
             if(c[global_index].w != 0.0f){
@@ -95,7 +110,7 @@ int main(int argc, char* argv[])
         
     }, true);
     
-    mob::kernel correct_system("correct_system", [&v, &p, &x, &c, dt](size_t global_index){
+    mob::kernel correct_system("correct_system", [&v, &p, &x, &c, dt](size_t global_index, size_t local_index){
         
         v.set(global_index, (p[global_index] - x[global_index])/dt);
         x.set(global_index, p[global_index]);

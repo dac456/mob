@@ -242,18 +242,30 @@ namespace MobNode
         //Find memory in shared pool
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
         if(mem.val_type == "float"){
-            auto res = segment.find<float>(mem.var_name.c_str());
+            /*auto res = segment.find<float>(mem.var_name.c_str());
             float* val = res.first; 
             
             std::stringstream val_str;
             val_str << (*(val+mem.idx));
-            mem.val = val_str.str();
+            mem.val = val_str.str();*/
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(mem.var_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* hmem = segment.get_address_from_handle(hnd);
+            
+            std::stringstream val_str;
+            val_str << *(((float*)hmem)+mem.idx);
+            mem.val = val_str.str();              
         }
         else if(mem.val_type == "float4"){
-            auto res = segment.find<mob::float4>(mem.var_name.c_str());
+            /*auto res = segment.find<mob::float4>(mem.var_name.c_str());
             mob::float4* val = res.first;     
             
-            mem.val = (*(val+mem.idx)).str();        
+            mem.val = (*(val+mem.idx)).str();*/
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(mem.var_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* hmem = segment.get_address_from_handle(hnd);
+            
+            mem.val = (*(((mob::float4*)hmem)+mem.idx)).str();                  
         }
         
         //Swap node name

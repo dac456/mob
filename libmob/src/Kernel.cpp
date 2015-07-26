@@ -48,7 +48,7 @@ namespace mob
                 //boost::thread exec_thread([=](){
                 grp.create_thread([=](){
                     for(size_t j=0; j<_threads[i].size(); j++){
-                        _kernel(_threads[i][j]);
+                        _kernel(_threads[i][j], i);
                     }
                 });
                 //grp.add_thread(&exec_thread);

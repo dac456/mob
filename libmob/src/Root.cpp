@@ -233,20 +233,28 @@ namespace mob
         //Set shared local memory
         bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());
         if(data.val_type == "float"){  
-            auto res = segment.find<float>(data.var_name.c_str());
+            /*auto res = segment.find<float>(data.var_name.c_str());
             float* val = res.first;
     
-            (*(val+data.idx)) = atof(data.val.c_str());  
+            (*(val+data.idx)) = atof(data.val.c_str());  */
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(data.var_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* mem = segment.get_address_from_handle(hnd);
+            *(((float*)mem)+data.idx) = atof(data.val.c_str());             
             
             //Flag as miss
             //gmem<float>* mem = (gmem<float>*)_allocated_mem.at(data.var_name);
             //mem->_locality_miss(data.node_name, data.idx);
         }
         else if(data.val_type == "float4"){
-            auto res = segment.find<float4>(data.var_name.c_str());
+            /*auto res = segment.find<float4>(data.var_name.c_str());
             float4* val = res.first;
     
-            (*(val+data.idx)) = float4(data.val); 
+            (*(val+data.idx)) = float4(data.val); */
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(data.var_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* mem = segment.get_address_from_handle(hnd);
+            *(((float4*)mem)+data.idx) = float4(data.val); 
             
             //Flag as miss
             //gmem<float4>* mem = (gmem<float4>*)_allocated_mem.at(data.var_name);
@@ -370,9 +378,13 @@ namespace mob
             //data_out.end = end;
             
             if(data.var_type == "float"){
-                auto res = segment.find<float>(data.var_name.c_str());
-                float* val = res.first;
-                
+                /*auto res = segment.find<float>(data.var_name.c_str());
+                float* val = res.first;*/
+                auto res = segment.find<bip::managed_shared_memory::handle_t>(data.var_name.c_str());
+                bip::managed_shared_memory::handle_t hnd = (*res.first);
+                void* hmem = segment.get_address_from_handle(hnd);  
+                float* val = (float*)hmem;   
+                               
                 //std::vector<float> out_vec(val + start, val + end);
                 //std::vector<float> out_vec;
                 for(size_t i=start; i<end; i++){
@@ -384,8 +396,12 @@ namespace mob
                 data_out.var_type = "float";
             }
             else if(data.var_type == "float4"){
-                auto res = segment.find<float4>(data.var_name.c_str());
-                float4* val = res.first;
+                /*auto res = segment.find<float4>(data.var_name.c_str());
+                float4* val = res.first;*/
+                auto res = segment.find<bip::managed_shared_memory::handle_t>(data.var_name.c_str());
+                bip::managed_shared_memory::handle_t hnd = (*res.first);
+                void* hmem = segment.get_address_from_handle(hnd);  
+                float4* val = (float4*)hmem;              
                 
                 //std::vector<float4> out_vec(val + start, val + end);
                 //std::vector<float4> out_vec;

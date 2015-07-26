@@ -18,8 +18,7 @@ namespace mob
         
         //Constructors and utilities
         float4(){
-            //val = _mm_setzero_ps();
-            //val = _mm_set_ps(0,0,0,0);
+            val = _mm_setzero_ps();
         }
         float4(float _x, float _y, float _z, float _w){
             val = _mm_set_ps(_w, _z, _y, _x);
@@ -55,7 +54,7 @@ namespace mob
             float D;
             _MM_EXTRACT_FLOAT(D, _mm_sqrt_ss(_mm_dp_ps(val, val, 0xFF)), 0);
             
-            return D;
+            D;
         }
         
         inline float dot(const float4& rhs) const{
@@ -92,16 +91,6 @@ namespace mob
             //return float4(x+rhs, y+rhs, z+rhs, w+rhs);
             return float4(_mm_add_ps(val, _mm_set1_ps(rhs)));
         }        
-        
-        inline void* operator new[](size_t x){
-            return memalign(16, x);
-        }
-        
-        inline void operator delete[](void* x){
-            if(x){
-                free(x);
-            }
-        }
         
         template<typename Archive>
         void serialize(Archive& ar, const unsigned int version){

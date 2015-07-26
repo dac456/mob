@@ -6,7 +6,7 @@
 namespace mob
 {
     
-    typedef std::function<void(size_t)> mob_kernel_func;
+    typedef std::function<void(size_t,size_t)> mob_kernel_func;
     typedef std::function<void()> mob_kernel_finished;
 
     class MOBAPI kernel{

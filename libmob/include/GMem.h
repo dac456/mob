@@ -61,7 +61,12 @@ namespace mob
             
             //Create shared region
             bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());
-            segment.find_or_construct<T>(name.c_str())[sz]();
+            //segment.find_or_construct<T>(name.c_str())[sz]();
+            void* ptr = segment.allocate_aligned(128*sz, 16);
+            
+            bip::managed_shared_memory::handle_t hnd = segment.get_handle_from_address(ptr);
+            auto res = segment.find_or_construct<bip::managed_shared_memory::handle_t>(name.c_str())(0);
+            (*res) = hnd;
             
             _mob_root = &mob_root;
             _mob_root->_allocated_mem[name] = this;
@@ -83,12 +88,16 @@ namespace mob
         void init(size_t idx, T val){
             //Update local memory
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
-            std::pair<T*, bip::managed_shared_memory::size_type> res;
+            //std::pair<T*, bip::managed_shared_memory::size_type> res;
             
-            res = segment.find<T>(_name.c_str());
+            /*res = segment.find<T>(_name.c_str());
             T* mem = res.first;
 
-            (*(mem+idx)) = val;   
+            (*(mem+idx)) = val;   */
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* mem = segment.get_address_from_handle(hnd);
+            *(((T*)mem)+idx) = val;
         }
         
         void set(size_t idx, T val){
@@ -100,12 +109,16 @@ namespace mob
             
             //Update local memory
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
-            std::pair<T*, bip::managed_shared_memory::size_type> res;
+            //std::pair<T*, bip::managed_shared_memory::size_type> res;
             
-            res = segment.find<T>(_name.c_str());
+            /*res = segment.find<T>(_name.c_str());
             T* mem = res.first;
 
-            (*(mem+idx)) = val;
+            (*(mem+idx)) = val;*/
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* mem = segment.get_address_from_handle(hnd);
+            *(((T*)mem)+idx) = val;            
 
             //Update remote if not our task  
             TaskList* task_list = segment.find<TaskList>("task_list").first; 
@@ -156,12 +169,16 @@ namespace mob
                 TaskList* task_list = segment.find<TaskList>("task_list").first;  
                 
                 if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
-                    std::pair<T*, bip::managed_shared_memory::size_type> res;
+                    //std::pair<T*, bip::managed_shared_memory::size_type> res;
                     
-                    res = segment.find<T>(_name.c_str());
+                    /*res = segment.find<T>(_name.c_str());
                     T* mem = res.first;
                     
-                    return (*(mem+idx));
+                    return (*(mem+idx));*/
+                    auto res = segment.find<bip::managed_shared_memory::handle_t>(_name.c_str());
+                    bip::managed_shared_memory::handle_t hnd = (*res.first);
+                    void* mem = segment.get_address_from_handle(hnd);
+                    return *(((T*)mem)+idx);                      
                 }
                 else{
                     _waiting_for_remote = std::make_pair(idx, true);
@@ -258,12 +275,16 @@ namespace mob
             }            
             
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
-            std::pair<T*, bip::managed_shared_memory::size_type> res;
+            //std::pair<T*, bip::managed_shared_memory::size_type> res;
             
-            res = segment.find<T>(_name.c_str());
+            /*res = segment.find<T>(_name.c_str());
             T* mem = res.first;
             
-            return (*(mem+task_idx));                          
+            return (*(mem+task_idx));  */
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* mem = segment.get_address_from_handle(hnd);
+            return *(((T*)mem)+task_idx);                           
         }
         
         void _locality_miss(std::string from_node, size_t idx){
