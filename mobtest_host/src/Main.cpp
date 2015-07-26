@@ -73,9 +73,15 @@ void initialize(int argc, char* argv[]){
         
         for(;;){
             host.launch("mobtest", "integrate_forces");
-            host.wait("mobtest", "integrate_forces");
+            host.wait("mobtest", "integrate_forces", -1);
+            
+            host.launch("mobtest", "project_particles");
+            host.wait("mobtest", "project_particles", -1);
+            
+            host.launch("mobtest", "correct_system");
+            host.wait("mobtest", "correct_system", -1);                        
 
-            result = host.capture_float4("mobtest", "p", 2000); 
+            result = host.capture_float4("mobtest", "p", -1); 
         }
         
     });    
@@ -134,8 +140,8 @@ void render(){
         for(auto v : result){
             scene->drawMesh(mesh, glm::translate(glm::vec3(v.x, v.y, v.z)));
         }
-    }     
-   
+    }
+    
     renderer->getActiveScene()->render(cam.get(), projMatrix);        
     
     glutSwapBuffers();

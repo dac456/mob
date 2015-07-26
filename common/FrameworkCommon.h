@@ -11,6 +11,25 @@
     #define MOB_PLATFORM_GNU
 #endif
 
+#ifdef MOB_PLATFORM_GNU
+
+
+    #if defined __FAST_MATH__
+    #   undef isnan
+    #endif
+    #if !defined isnan
+    #   define isnan isnan
+    #   include <stdint.h>
+    static inline int isnan(float f)
+    {
+        union { float f; uint32_t x; } u = { f };
+        return (u.x << 1) > 0xff000000u;
+    }
+    #endif
+    
+
+#endif
+
 #include <memory>
 #include <vector>
 #include <utility>
@@ -43,6 +62,8 @@ namespace bip = boost::interprocess;
 #include <boost/thread.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
+namespace fs = boost::filesystem;
 
 #include "boost/process.hpp"
 namespace proc = boost::process;

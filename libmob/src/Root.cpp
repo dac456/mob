@@ -17,7 +17,7 @@ namespace mob
     }
     
     void root::init(int argc, char* argv[]){
-        _prgm_name = argv[0];
+        _prgm_name = fs::path(argv[0]).filename().string();
         std::cout << _prgm_name << std::endl;
         
         int nextParam = 0;
@@ -491,24 +491,35 @@ namespace mob
     }
     
     void root::_prgm_get_mem(node_message& msg){
-        boost::system::error_code error;
-        asio::ip::udp::socket broad_socket(_service);
-        broad_socket.open(asio::ip::udp::v4(), error);
-        if(!error){
-            broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
-            broad_socket.set_option(asio::socket_base::broadcast(true));
+        //boost::system::error_code error;
+        //asio::ip::udp::socket broad_socket(_service);
+        //broad_socket.open(asio::ip::udp::v4(), error);
+        //if(!error){
+            //broad_socket.set_option(asio::ip::udp::socket::reuse_address(true));
+            //broad_socket.set_option(asio::socket_base::broadcast(true));
             
             std::pair<char*, size_t> msg_pair = msg.encode();
 
-            asio::ip::udp::endpoint senderEndpoint(asio::ip::address_v4::broadcast(), NODE_PORT);
-            broad_socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), senderEndpoint);
-            broad_socket.close(error);
+            bool try_again = true;
+            
+            while(try_again){
+                try{
+                    asio::ip::udp::endpoint ep(asio::ip::address_v4::broadcast(), NODE_PORT);
+                    _socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), ep);
+                    //broad_socket.close(error);
+                    try_again = false;
+                }
+                catch(...){
+                    std::cout << "EXCEPTION" << std::endl;
+                }
+            }
+                
             
             delete[] msg_pair.first;
-        }
-        else{
-            std::cout << "broadcast error" << std::endl;
-        }           
+        //}
+        //else{
+        //    std::cout << "broadcast error" << std::endl;
+        //}           
     }
     
     void root::_prgm_mov_task(std::string to_node, size_t idx){

@@ -124,10 +124,12 @@ namespace mob
            std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
            std::cout << node.first << std::endl;
            while(!_capture_status_map[std::make_pair(node.first, var)].second){
-                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-                auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-                if(millis > timeout){
-                    break;
+                if(timeout != -1){
+                    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                    auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+                    if(millis > timeout){
+                        break;
+                    }
                 }
            }
        }       
@@ -135,15 +137,17 @@ namespace mob
        return _capture_buffer_float4;
     }     
     
-    void host::wait(std::string prgm, std::string kernel){
+    void host::wait(std::string prgm, std::string kernel, size_t timeout){
         std::cout << "host waiting..." << std::endl;
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
         while(!_kernel_status_map.at(std::make_pair(prgm,kernel))){
-            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-            if(millis > 5000){
-                break;
-            }           
+            if(timeout != -1){
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+                if(millis > timeout){
+                    break;
+                }   
+            }        
         }
         std::cout << "kernel finished" << std::endl;
     }

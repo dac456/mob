@@ -1,55 +1,106 @@
 #ifndef __DATATYPES_H
 #define __DATATYPES_H
 
+#include <smmintrin.h>
+#include <malloc.h>
+
 namespace mob
 {
     
-    struct float4{
-        float x, y, z, w;
+    struct __attribute__((aligned(16))) float4{
+    //public:
+        union{
+            struct{
+                float x, y, z, w;
+            };
+            __m128 val;
+        };
         
         //Constructors and utilities
-        float4(){}
+        float4(){
+            //val = _mm_setzero_ps();
+            //val = _mm_set_ps(0,0,0,0);
+        }
         float4(float _x, float _y, float _z, float _w){
-            x = _x;
-            y = _y;
-            z = _z;
-            w = _w;            
+            val = _mm_set_ps(_w, _z, _y, _x);
+            //x = _x;
+            //y = _y;
+            //z = _z;
+            //w = _w;           
+        }
+        float4(__m128 _val){
+            val = _val;
         }
         float4(std::string stringval){
             std::stringstream ss(stringval);
+            float _x, _y, _z, _w;
+            ss >> _x;
+            ss >> _y;
+            ss >> _z;
+            ss >> _w;
             
-            ss >> x;
-            ss >> y;
-            ss >> z;
-            ss >> w;
+            val = _mm_set_ps(_w, _z, _y, _x); 
         }
         
-        const std::string str() const{
+        const std::string str() {
             std::stringstream ss;
             ss << x << " " << y << " " << z << " " << w;
             return ss.str();
         }
         
         //Math helpers
-        float length(){
-            return sqrtf((x*x) + (y*y) + (z*z) + (w*w));
+        inline float length() const{
+            //return sqrtf((x*x) + (y*y) + (z*z) + (w*w));
+
+            float D;
+            _MM_EXTRACT_FLOAT(D, _mm_sqrt_ss(_mm_dp_ps(val, val, 0xFF)), 0);
+            
+            return D;
         }
         
-        float dot(const float4& rhs){
-            return (x*rhs.x) + (y*rhs.y) + (z*rhs.z) + (w*rhs.w);
+        inline float dot(const float4& rhs) const{
+            //return (x*rhs.x) + (y*rhs.y) + (z*rhs.z) + (w*rhs.w);
+
+            float D;
+            _MM_EXTRACT_FLOAT(D, _mm_dp_ps(val, rhs.val, 0xFF), 0);
+            
+            return D;
         }
         
         //Operators
         inline float4 operator+(const float4& rhs) const{
-            return float4(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w);
+            //return float4(x+rhs.x, y+rhs.y, z+rhs.z, w+rhs.w);
+            return float4(_mm_add_ps(val, rhs.val));
         }
         
         inline float4 operator-(const float4& rhs) const{
-            return float4(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w);
+            //return float4(x-rhs.x, y-rhs.y, z-rhs.z, w-rhs.w);
+            return float4(_mm_sub_ps(val, rhs.val));
         }
         
         inline float4 operator*(const float rhs) const{
-            return float4(x*rhs, y*rhs, z*rhs, w*rhs);
+            //return float4(x*rhs, y*rhs, z*rhs, w*rhs);
+            return float4(_mm_mul_ps(val, _mm_set1_ps(rhs)));
+        }
+        
+        inline float4 operator/(const float rhs) const{
+            //return float4(x/rhs, y/rhs, z/rhs, w/rhs);
+            return float4(_mm_div_ps(val, _mm_set1_ps(rhs)));
+        }
+        
+        inline float4 operator+(const float rhs) const{
+            //return float4(x+rhs, y+rhs, z+rhs, w+rhs);
+            return float4(_mm_add_ps(val, _mm_set1_ps(rhs)));
+        }        
+        
+        inline void* operator new[](size_t x){
+            return memalign(16, x);
+        }
+        
+        inline void operator delete[](void* x){
+            if(x){
+                free(x);
+            }
         }
         
         template<typename Archive>

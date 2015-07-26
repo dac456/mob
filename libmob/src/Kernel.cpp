@@ -37,14 +37,14 @@ namespace mob
                 for(size_t i=0; i<mem->size(); i++){
                     //std::cout << t << " " << (*mem)[i] << std::endl;
                     _threads[t].push_back((*mem)[i] );
-                    t = (t + 1) % 8;
+                    t = (t + 1) % 4;
                 }
                 
                 //_threads_need_update = false;
             }
             
             boost::thread_group grp;
-            for(size_t i=0; i<8; i++){
+            for(size_t i=0; i<4; i++){
                 //boost::thread exec_thread([=](){
                 grp.create_thread([=](){
                     for(size_t j=0; j<_threads[i].size(); j++){

@@ -88,7 +88,7 @@ namespace mob
             res = segment.find<T>(_name.c_str());
             T* mem = res.first;
 
-            (*(mem+idx)) = val;            
+            (*(mem+idx)) = val;   
         }
         
         void set(size_t idx, T val){
@@ -247,7 +247,15 @@ namespace mob
             msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());
             
             _mob_root->_prgm_get_mem(msg);
-            while(_waiting_for_remote.second); //TODO: timeout and detect bad node
+
+            std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+            while(_waiting_for_remote.second){
+                std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+                auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
+                if(millis > 10000){
+                    break;
+                }          
+            }            
             
             bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());
             std::pair<T*, bip::managed_shared_memory::size_type> res;
@@ -269,10 +277,10 @@ namespace mob
             
             float miss_ratio = float(_miss_map.at(idx).first) / float(_ref_count[idx]);
             //std::cout << float(_miss_map.at(idx).first) << " " << float(_ref_count[idx]) << " " << miss_ratio << std::endl;
-            if(miss_ratio > 0.5f && _ref_count[idx] > 5 && !_miss_map.at(idx).second){
+            /*if(miss_ratio > 0.5f && _ref_count[idx] > 5 && !_miss_map.at(idx).second){
                 _mob_root->_prgm_mov_task(from_node, idx);
                 _miss_map.at(idx).second = true;
-            }
+            }*/
         }
         
         //friend class root;
