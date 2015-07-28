@@ -135,7 +135,7 @@ int main(int argc, char* argv[])
     float dt = 1.0f/240.0f;
     
     mob::kernel integrate_forces("integrate_forces", [&v, &p, &x, dt](size_t global_index, size_t local_index){
-        
+
         v.set(global_index, v[global_index] + (float4(0.0f, -9.8f, 0.0f, 1.0f) * 2.0f * dt));
         
         p.set(global_index, p[global_index] + (v[global_index] * dt));
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     
     
     mob::kernel project_particles("project_particles", [&p, &c, &local_block, &used_last, &bar1, &bar2](size_t global_index, size_t local_index){
-        
+
         for(size_t k=0; k<10; k++){
             size_t nb = 200/4;
             

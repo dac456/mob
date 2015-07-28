@@ -20,7 +20,8 @@ namespace mob
         boost::thread kernel_thread([&](){  
             
             mob_root._kernel_started(_name);          
-
+            bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
+            task_mtx.lock();
             if(_threads_need_update){
                 for(auto t : _threads){
                     t.clear();
@@ -34,14 +35,15 @@ namespace mob
                 std::cout << "got " << mem->size() << " tasks" << std::endl;
                 
                 size_t t = 0;
-                for(size_t i=0; i<mem->size(); i++){
+                for(size_t idx : (*mem)){
                     //std::cout << t << " " << (*mem)[i] << std::endl;
-                    _threads[t].push_back((*mem)[i] );
+                    _threads[t].push_back(idx);
                     t = (t + 1) % 4;
                 }
                 
                 //_threads_need_update = false;
             }
+            task_mtx.unlock();  
             
             boost::thread_group grp;
             for(size_t i=0; i<4; i++){
@@ -55,8 +57,8 @@ namespace mob
             }
             if(_implicit_barrier){ 
                 grp.join_all();
-            }           
-            
+            }    
+                 
             mob_root._kernel_finished(_name);
         });
     }

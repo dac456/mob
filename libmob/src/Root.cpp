@@ -21,14 +21,15 @@ namespace mob
         std::cout << _prgm_name << std::endl;
         
         int nextParam = 0;
+        size_t num_tasks = 0;
         for(int i=0; i<argc; i++){
             if(strstr(argv[i], "--") == nullptr){
                 if(nextParam == 1){
-                    //_task_indices.push_back(atoi(argv[i]));
+                    num_tasks = atoi(argv[i]);
                 }
             }
             else{     
-                if(strcmp(argv[i], "--tasklist") == 0){
+                if(strcmp(argv[i], "--numtasks") == 0){
                     nextParam = 1;
                 }
             }            
@@ -41,7 +42,7 @@ namespace mob
         
         //Create shared memory pool
         bip::named_condition::remove("test_cnd");
-        bip::named_mutex::remove("test_mtx");
+        bip::named_mutex::remove("task_mtx");
         
         bip::shared_memory_object::remove(_prgm_name.c_str()); //Clear anything left from previous execution
         bip::shared_memory_object::remove("task_list");
@@ -266,7 +267,7 @@ namespace mob
     }
     
     void root::_handle_prgm_move_tasks(node_message& msg){
-        std::cout << "_handle_prgm_move_tasks" << std::endl;
+        //std::cout << "_handle_prgm_move_tasks" << std::endl;
         
         //Decode message
         std::stringstream msgStream;
@@ -279,10 +280,14 @@ namespace mob
         bip::managed_shared_memory segment(bip::open_only, _prgm_name.c_str());      
         TaskList* mem = segment.find<TaskList>("task_list").first;        
         
-        //Remove elements that we moved        
-        for(auto idx : data.task_list){
-            mem->erase(std::find(mem->begin(), mem->end(), idx));
+        //Add new tasks
+        bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
+        task_mtx.lock();
+        if(std::find(mem->begin(), mem->end(), data.task_list[0]) == mem->end()){
+            mem->push_back(data.task_list[0]);
+            std::cout << "push_back" << std::endl;
         }
+        task_mtx.unlock();
         
         //Reset moving status
         _sig_remote_move(data.task_list[0]);
@@ -539,7 +544,7 @@ namespace mob
     }
     
     void root::_prgm_mov_task(std::string to_node, size_t idx){
-        std::cout << "_prgm_mov_task " << to_node << std::endl;
+        //::cout << "_prgm_mov_task " << to_node << std::endl;
         
         node_message msg(PRGM_MOV_TASKS);
         

@@ -101,7 +101,7 @@ namespace mob
         }
         
         void set(size_t idx, T val){
-            _gmem_set.lock();
+            //_gmem_set.lock();
 
             //TODO: update local (or remote) node with new value (?)
             //      need some way of tracking which node is responsible for which tasks
@@ -121,14 +121,17 @@ namespace mob
             *(((T*)mem)+idx) = val;            
 
             //Update remote if not our task  
-            TaskList* task_list = segment.find<TaskList>("task_list").first; 
+            bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
+            //task_mtx.lock();
+            TaskList* task_list = segment.find<TaskList>("task_list").first;  
             
+            TaskList::iterator itr = std::find(task_list->begin(), task_list->end(), idx);
             
-            //TODO: always send to make data capture easier. in practice should not do this
-            if(std::find(task_list->begin(), task_list->end(), idx) == task_list->end()){
+            if(itr == task_list->end()){
                 _send_mem(_name, val, idx);
             }
-            _gmem_set.unlock();             
+            //task_mtx.unlock();
+            //_gmem_set.unlock();             
         }
         
         void fetch(){
@@ -163,12 +166,16 @@ namespace mob
             //_gmem_get.lock();
             assert(idx >= 0 && idx < _sz);
             _ref_count[idx]++;
-            
+
+            bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
+            //task_mtx.lock();            
             try{
                 bip::managed_shared_memory segment(bip::open_only, _mob_root->get_name().c_str());    
-                TaskList* task_list = segment.find<TaskList>("task_list").first;  
+                TaskList* task_list = segment.find<TaskList>("task_list").first;
                 
-                if(std::find(task_list->begin(), task_list->end(), idx) != task_list->end()){
+                TaskList::iterator itr = std::find(task_list->begin(), task_list->end(), idx);
+                
+                if(itr != task_list->end()){
                     //std::pair<T*, bip::managed_shared_memory::size_type> res;
                     
                     /*res = segment.find<T>(_name.c_str());
@@ -178,6 +185,7 @@ namespace mob
                     auto res = segment.find<bip::managed_shared_memory::handle_t>(_name.c_str());
                     bip::managed_shared_memory::handle_t hnd = (*res.first);
                     void* mem = segment.get_address_from_handle(hnd);
+                    
                     return *(((T*)mem)+idx);                      
                 }
                 else{
@@ -185,10 +193,12 @@ namespace mob
                     
                     return _get_mem(_name, idx);
                 }
+                
             }
             catch(bip::interprocess_exception& e){
                 std::cout << e.what() << std::endl;
-            }          
+            }
+            //task_mtx.unlock();          
             //_gmem_get.unlock();  
         }
         
@@ -298,10 +308,10 @@ namespace mob
             
             float miss_ratio = float(_miss_map.at(idx).first) / float(_ref_count[idx]);
             //std::cout << float(_miss_map.at(idx).first) << " " << float(_ref_count[idx]) << " " << miss_ratio << std::endl;
-            /*if(miss_ratio > 0.5f && _ref_count[idx] > 5 && !_miss_map.at(idx).second){
+            if(miss_ratio > 0.75f && _ref_count[idx] > 200 && !_miss_map.at(idx).second){
                 _mob_root->_prgm_mov_task(from_node, idx);
                 _miss_map.at(idx).second = true;
-            }*/
+            }
         }
         
         //friend class root;

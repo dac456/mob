@@ -213,16 +213,22 @@ namespace MobNode
         bip::managed_shared_memory segment(bip::open_only, mem.prgm_name.c_str());
         
         if(mem.val_type == "float"){
-            auto res = segment.find<float>(mem.var_name.c_str());
-            float* val = res.first;
+            /*auto res = segment.find<float>(mem.var_name.c_str());
+            float* val = res.first;*/
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(mem.var_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* hmem = segment.get_address_from_handle(hnd);            
     
-            (*(val+mem.idx)) = atof(mem.val.c_str());
+            (*(((float*)hmem)+mem.idx)) = atof(mem.val.c_str());
         }
         else if(mem.val_type == "float4"){
-            auto res = segment.find<mob::float4>(mem.var_name.c_str());
-            mob::float4* val = res.first;    
+            /*auto res = segment.find<mob::float4>(mem.var_name.c_str());
+            mob::float4* val = res.first;*/
+            auto res = segment.find<bip::managed_shared_memory::handle_t>(mem.var_name.c_str());
+            bip::managed_shared_memory::handle_t hnd = (*res.first);
+            void* hmem = segment.get_address_from_handle(hnd);            
             
-            (*(val+mem.idx)) = mob::float4(mem.val);  
+            (*(((mob::float4*)hmem)+mem.idx)) = mob::float4(mem.val);  
         }
         
         _prgm_set_mem_mutex.unlock();
@@ -553,7 +559,9 @@ namespace MobNode
         });
     }
     
-    void NodeServer::_handleMsgPrgmMoveTasks(mob::node_message& msg){      
+    void NodeServer::_handleMsgPrgmMoveTasks(mob::node_message& msg){ 
+        //std::cout << "_handleMsgPrgmMoveTasks" << std::endl;
+             
         //Decode message
         std::stringstream msgStream;
         msgStream << msg.get_data();
@@ -562,13 +570,18 @@ namespace MobNode
         node_task_data data;
         ia >> data; 
         
-        //Add new tasks
         bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());      
-        TaskList* mem = segment.find<TaskList>("task_list").first;
-        
-        //for(size_t i=0; i<data.task_list.size(); i++){
-            mem->push_back(data.task_list[0]);
-        //}          
+        TaskList* mem = segment.find<TaskList>("task_list").first;        
+      
+        //Remove elements that we moved   
+        bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
+        task_mtx.lock();     
+        TaskList::iterator itr = std::find(mem->begin(), mem->end(), data.task_list[0]);
+        if(itr != mem->end()){
+            mem->erase(itr);
+            std::cout << "erase" << std::endl;
+        }        
+        task_mtx.unlock();
         
         //TODO: notify kernels that the tasks were updated   
         
