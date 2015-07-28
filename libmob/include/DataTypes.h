@@ -54,7 +54,7 @@ namespace mob
             float D;
             _MM_EXTRACT_FLOAT(D, _mm_sqrt_ss(_mm_dp_ps(val, val, 0xFF)), 0);
             
-            D;
+            return D;
         }
         
         inline float dot(const float4& rhs) const{
