@@ -8,6 +8,7 @@ It is in an unfinished and unorganized state, but portions may still be useful t
 
 ### TODO
 * 'Host' needs to be renamed to 'Client' throughout the code.
+* Not 100% sure if the nearest-neighbours approach to filtering particle interaction in mobtest actually works.
 * Commenting & documentation (!!!)
 * More error handling and fault-tolerance mechanisms
 * Refactoring and code cleanup
