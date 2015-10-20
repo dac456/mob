@@ -106,7 +106,9 @@ int main(int argc, char* argv[])
     mob::gmem<float4> x("x", mob, 200);
     mob::gmem<float4> c("c", mob, 200);
     
-    std::map<size_t, std::vector< std::pair<bool, size_t> >> used_last;
+    mob::gmem<float4> l("l", mob, 200);
+    
+    std::map<size_t, std::vector< std::pair<size_t, std::pair<float,float4> > >> local_group;
     
     //Initialize particles
     //quad_tree* tree;
@@ -117,15 +119,12 @@ int main(int argc, char* argv[])
         for(size_t j=0; j<10; j++){
             for(size_t k=0; k<10; k++){
                 v.init(idx, float4(0.0f, 0.0f, 0.0f, 1.0f));
-                p.init(idx, float4(d*float(i) - (2.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
-                x.init(idx, float4(d*float(i) - (2.0f/2.0f),d*float(j), d*float(k) - (10.0f/2.0f), 1.0f));
+                p.init(idx, float4(d*float(i) - (2.0f/2.0f),d*float(j) + 0.0f, d*float(k) - (10.0f/2.0f), 1.0f));
+                x.init(idx, float4(d*float(i) - (2.0f/2.0f),d*float(j) + 0.0f, d*float(k) - (10.0f/2.0f), 1.0f));
                 
                 c.init(idx, float4(0.0f, 0.0f, 0.0f, 0.0f));
                 
-                used_last[idx] = std::vector< std::pair<bool, size_t> >();
-                for(size_t m=0; m<200; m++){
-                    used_last[idx].push_back(std::make_pair(true, 0));
-                }
+                l.init(idx, float4(-1.0f, -1.0f, -1.0f, -1.0f));
                 
                 idx++;
             }
@@ -137,8 +136,10 @@ int main(int argc, char* argv[])
     mob::kernel integrate_forces("integrate_forces", [&v, &p, &x, dt](size_t global_index, size_t local_index){
 
         v.set(global_index, v[global_index] + (float4(0.0f, -9.8f, 0.0f, 1.0f) * 2.0f * dt));
+        v.set(global_index, float4(v[global_index].x,v[global_index].y,v[global_index].z, 1.0f));
         
         p.set(global_index, p[global_index] + (v[global_index] * dt));
+        p.set(global_index, float4(p[global_index].x,p[global_index].y,p[global_index].z, 1.0f));
 
     }, true);
     
@@ -148,9 +149,9 @@ int main(int argc, char* argv[])
     
     
     
-    mob::kernel project_particles("project_particles", [&p, &c, &local_block, &used_last, &bar1, &bar2](size_t global_index, size_t local_index){
+    mob::kernel project_particles("project_particles", [&p, &c, &l, &local_block, &local_group, &bar1, &bar2](size_t global_index, size_t local_index){
 
-        for(size_t k=0; k<10; k++){
+        for(size_t k=0; k<4; k++){
             size_t nb = 200/4;
             
             size_t nc = 0;
@@ -160,33 +161,49 @@ int main(int argc, char* argv[])
                 //std::cout << (j*4)+local_index << std::endl;
             //    local_block[local_index] = p[(j*4)+local_index];
             //    bar1.wait();
-                
-                float usage = 0.0f;
-                for(size_t i=0; i<200/*4*/; i++){
-                    //if(i != local_index){
-                    if(used_last[global_index][i].first || (used_last[global_index][i].second % 50) >= 49){
-                        //float4 delta = local_block[i] - p[global_index];
-                        float4 delta = p[i] - p[global_index];
-                        float delta_length = delta.length();
-                        
-                        if(!isnan(delta_length)){
-                            float C = delta_length - 2.0f;
-                            if(C <= 0.0f){
-                                float s = 0.5f;
+            
+
+                if(l[global_index].x != -1.0f && l[global_index].y != -1 && l[global_index].z != -1 && l[global_index].w != -1){
+                    for(size_t i=0; i<4; i++){
+                        if(size_t(l[global_index][i]) != global_index){
                                 
-                                d_avg = d_avg + ((delta/delta_length)*s*C * (1.0f - (1.0f - pow(0.9, k))));
-                                d_avg.w = 1.0f;
-                                nc++;
+                                //float4 delta = local_block[i] - p[global_index];
+                                float4 delta = p[size_t(l[global_index][i])] - p[global_index];
+                                float delta_length = delta.length();
                                 
-                                //std::cout << global_index << " used " << i << std::endl;
-                                used_last[global_index][i].first = true;
-                                used_last[global_index][i].second = 0;
-                                usage += 1.0f;
-                            }
-                            else{
-                                used_last[global_index][i].first = false;
-                                used_last[global_index][i].second++;
-                            }
+                                //if(!isnan(delta_length)){
+                                    float C = delta_length - 2.0f;
+                                    if(C < 0.0f){
+                                        float s = 2.0f;
+                                        
+                                        d_avg = d_avg + ((delta/delta_length)*s*C * (1.0f - (1.0f - pow(0.9f, k))));
+                                        d_avg.w = 1.0f;
+                                        nc++;
+                                                                    
+                                    }
+                                //}
+                        }
+                    }
+                }
+                else{
+                    for(size_t i=0; i<200/*4*/; i++){
+                        if(i != global_index){
+                                
+                                //float4 delta = local_block[i] - p[global_index];
+                                float4 delta = p[i] - p[global_index];
+                                float delta_length = delta.length();
+                                
+                                if(!isnan(delta_length)){
+                                    float C = delta_length - 2.0f;
+                                    if(C < 0.0f){
+                                        float s = 2.0f;
+                                        
+                                        d_avg = d_avg + ((delta/delta_length)*s*C * (1.0f - (1.0f - pow(0.9f, k))));
+                                        d_avg.w = 1.0f;
+                                        nc++;
+                                                                    
+                                    }
+                                }
                         }
                     }
                 }
@@ -214,18 +231,23 @@ int main(int argc, char* argv[])
             if(nc == 0){
                 nc = 1;
             }
-            if(d_avg.str().find("nan") == std::string::npos){
+            //if(d_avg.str().find("nan") == std::string::npos){
                 p.set(global_index, p[global_index] + (d_avg/float(nc)));
-            }
+                p.set(global_index, float4(p[global_index].x,p[global_index].y,p[global_index].z, 1.0f));
+            //}
         }
         
     }, true);
     
-    mob::kernel correct_system("correct_system", [&v, &p, &x, &c, dt](size_t global_index, size_t local_index){
+    mob::kernel correct_system("correct_system", [&v, &p, &x, &c, &l, dt](size_t global_index, size_t local_index){
         
+        std::cout << l[global_index].str() << std::endl;
         
         v.set(global_index, (p[global_index] - x[global_index])/dt);
+        v.set(global_index, float4(v[global_index].x,v[global_index].y,v[global_index].z, 1.0f));
+        
         x.set(global_index, p[global_index]);
+        x.set(global_index, float4(x[global_index].x,x[global_index].y,x[global_index].z, 1.0f));
         
         if(c[global_index].w != 0.0f){
             float4 n = float4(0.0f, 1.0f, 0.0f, 1.0f);

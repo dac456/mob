@@ -395,11 +395,13 @@ namespace MobNode
             size_t blockSize = floor((float)(mem.num_tasks)/(float)(nodeCount));
             
             //TODO: check for odd number of tasks
+            //size_t k = 0;
             for(size_t i=0; i<nodeCount; i++){
                 
                 size_t start = i*blockSize;
                 for(size_t j=start; j<start+blockSize; j++){
-                    taskAssign[i].push_back(j);
+                    taskAssign[rand() % nodeCount].push_back(j);
+                    //k++;
                 }
             }
             
@@ -571,36 +573,39 @@ namespace MobNode
         ia >> data; 
         
         bip::managed_shared_memory segment(bip::open_only, data.prgm_name.c_str());      
-        TaskList* mem = segment.find<TaskList>("task_list").first;        
+        TaskList* mem = segment.find<TaskList>("task_list").first;
+        
+        if(mem->size() > 50){        
       
-        //Remove elements that we moved   
-        bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
-        task_mtx.lock();     
-        TaskList::iterator itr = std::find(mem->begin(), mem->end(), data.task_list[0]);
-        if(itr != mem->end()){
-            mem->erase(itr);
-            std::cout << "erase" << std::endl;
-        }        
-        task_mtx.unlock();
-        
-        //TODO: notify kernels that the tasks were updated   
-        
-        //Ping back
-        mob::node_message msgOut(mob::PRGM_MOV_TASKS);
-        
-        std::stringstream msgStreamOut;
-        boost::archive::text_oarchive oa(msgStreamOut);
-        oa << data;
-        
-        msgOut.set_data(msgStreamOut.str().c_str(), msgStreamOut.str().size());
-        std::pair<char*, size_t> msgPair = msgOut.encode();
-        
-        asio::ip::udp::resolver resolver(*_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(PRGM_PORT));
-        asio::ip::udp::endpoint ep = *resolver.resolve(query);
-        
-        _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
-        delete[] msgPair.first;        
+            //Remove elements that we moved   
+            bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
+            task_mtx.lock();     
+            TaskList::iterator itr = std::find(mem->begin(), mem->end(), data.task_list[0]);
+            if(itr != mem->end()){
+                mem->erase(itr);
+                std::cout << "erase" << std::endl;
+            }        
+            task_mtx.unlock();
+            
+            //TODO: notify kernels that the tasks were updated   
+            
+            //Ping back
+            mob::node_message msgOut(mob::PRGM_MOV_TASKS);
+            
+            std::stringstream msgStreamOut;
+            boost::archive::text_oarchive oa(msgStreamOut);
+            oa << data;
+            
+            msgOut.set_data(msgStreamOut.str().c_str(), msgStreamOut.str().size());
+            std::pair<char*, size_t> msgPair = msgOut.encode();
+            
+            asio::ip::udp::resolver resolver(*_service);
+            asio::ip::udp::resolver::query query(asio::ip::udp::v4(), data.host_name, boost::lexical_cast<std::string>(PRGM_PORT));
+            asio::ip::udp::endpoint ep = *resolver.resolve(query);
+            
+            _socket.send_to(asio::buffer(msgPair.first, msgPair.second), ep);
+            delete[] msgPair.first;  
+        }      
     }
     
     void NodeServer::_handleMsgPrgmStarted(mob::node_message& msg){

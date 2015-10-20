@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
 }
 
 std::vector<mob::float4> result;
+std::vector<mob::float4> out;
 void initialize(int argc, char* argv[]){
     initWindow(argc, argv);
     
@@ -69,9 +70,17 @@ void initialize(int argc, char* argv[]){
     
     engine->setRenderer(renderer);
     
+    bool initialized = false;
+    
     boost::thread dist([&](){
         
+        float avg = 0.0f;
+        size_t ns = 0;
+        
         for(;;){
+     
+            std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+            
             host.launch("mobtest", "integrate_forces");
             host.wait("mobtest", "integrate_forces", -1);
             
@@ -82,7 +91,91 @@ void initialize(int argc, char* argv[]){
             host.wait("mobtest", "correct_system", -1);                        
 
             result = host.capture_float4("mobtest", "p", -1); 
+            
+            
+            out.resize(200);
+            
+            if(!initialized){
+                for(size_t i=0; i<200; i++){
+                    out[i] = mob::float4(-1.0f,-1.0f,-1.0f,-1.0f);
+                    
+                    size_t nearest[4] = {-1, -1, -1, -1};
+                    float nd[4] = {std::numeric_limits<float>::max(),std::numeric_limits<float>::max(),std::numeric_limits<float>::max(),std::numeric_limits<float>::max()};
+                    for(size_t j=0; j<200; j++){
+                        mob::float4 delta = result[i] - result[j];
+                        float d = delta.length();
+                        
+                        if(d < nd[0]){
+                            nearest[0] = j;
+                            nd[0] = d;
+                        }
+                        else if(d < nd[1]){
+                            nearest[1] = j;
+                            nd[1] = d;
+                        }
+                        else if(d < nd[2]){
+                            nearest[2] = j;
+                            nd[2] = d;
+                        }
+                        else if(d < nd[3]){
+                            nearest[3] = j;
+                            nd[3] = d;
+                        }                                                
+                    }
+                    
+                    out[i] = mob::float4(float(nearest[0]),float(nearest[1]),float(nearest[2]),float(nearest[3]));
+                }
+                initialized = true;
+                host.set_float4("mobtest", "l", out);
+            }
+            else{
+                for(size_t i=0; i<200; i++){
+                    size_t nearest[4] = {size_t(out[i][0]), size_t(out[i][1]), size_t(out[i][2]), size_t(out[i][3])};
+                    
+                    for(size_t j=0; j<4; j++){
+                        if(nearest[j] != -1){
+                            mob::float4 delta1 = result[nearest[j]] - result[i];
+                            float d1 = delta1.length();
+                            
+                            size_t nearest_j[4] = {size_t(out[nearest[j]][0]),size_t(out[nearest[j]][1]),size_t(out[nearest[j]][2]),size_t(out[nearest[j]][3])};
+                            float o[4] = {-1.0f,-1.0f,-1.0f,-1.0f};
+                            for(size_t k=0; k<4; k++){
+                                mob::float4 delta2 = result[nearest_j[k]] - result[i];
+                                float d2 = delta2.length();
+                                
+                                if(d2 < d1){
+                                    o[k] = float(nearest_j[k]);
+                                }
+                            }
+                            if(o[0] != -1.0f){
+                                out[i].x = o[0];
+                            }
+                            if(o[1] != -1.0f){
+                                out[i].x = o[1];
+                            }
+                            if(o[2] != -1.0f){
+                                out[i].x = o[2];
+                            }
+                            if(o[3] != -1.0f){
+                                out[i].x = o[3];
+                            }                                                                                    
+                          
+                        }
+                    }
+                }
+                
+                host.set_float4("mobtest", "l", out);
+            }
+            
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();  
+            
+            ns++;
+            avg += float(millis);
+            std::cout << "Avg Time: " << avg/float(ns) << std::endl;
+            std::cout << "Total Misses: " << total_misses << std::endl;
         }
+        
         
     });    
 }

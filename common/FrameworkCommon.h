@@ -37,6 +37,7 @@
 #include <mutex>
 #include <stack>
 #include <chrono>
+#include <limits>
 
 #include <boost/asio.hpp>
 namespace asio = boost::asio;
@@ -76,6 +77,8 @@ namespace proc = boost::process;
 
 typedef bip::allocator<size_t, bip::managed_shared_memory::segment_manager> ShmemAllocator;
 typedef std::vector<size_t, ShmemAllocator> TaskList;
+
+static size_t total_misses = 0;
 
 #include "DataTypes.h"
 

@@ -41,14 +41,14 @@ namespace mob
             val = _mm_set_ps(_w, _z, _y, _x); 
         }
         
-        const std::string str() {
+        const std::string str() const {
             std::stringstream ss;
             ss << x << " " << y << " " << z << " " << w;
             return ss.str();
         }
         
         //Math helpers
-        inline float length() const{
+        inline float length() const {
             //return sqrtf((x*x) + (y*y) + (z*z) + (w*w));
 
             float D;
@@ -90,7 +90,21 @@ namespace mob
         inline float4 operator+(const float rhs) const{
             //return float4(x+rhs, y+rhs, z+rhs, w+rhs);
             return float4(_mm_add_ps(val, _mm_set1_ps(rhs)));
-        }        
+        }
+        
+        inline float operator[](const int idx) const{
+            assert(idx >= 0 && idx < 4);
+            
+            if(idx == 0) return x;
+            if(idx == 1) return y;
+            if(idx == 2) return z;
+            if(idx == 3) return w;
+        }
+        
+        /*inline float4& operator=(const float4& rhs){
+            val = rhs.val; 
+            return *this;
+        }        */
         
         template<typename Archive>
         void serialize(Archive& ar, const unsigned int version){

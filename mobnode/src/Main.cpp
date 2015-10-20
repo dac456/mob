@@ -19,15 +19,28 @@ int main(int argc, char* argv[]){
     
     //srv.join();
     //cli.join();
+    
+    bip::shared_memory_object::remove("mobnode"); 
+    bip::managed_shared_memory segment(bip::open_or_create, "mobnode", (1024*1024));
+    segment.construct<float>("avgload")(0.0f);
+    segment.construct<int>("numcpus")(sysconf( _SC_NPROCESSORS_ONLN ));
+    
+    std::cout << sysconf( _SC_NPROCESSORS_ONLN ) << std::endl;
 
     for(;;){
         #ifdef MOB_PLATFORM_GNU
         {
             std::ifstream fin("/proc/loadavg", std::ios::in);
-            double instant;
-            double five_min;
+            float instant;
+            float five_min;
             fin >> instant >> five_min;
             fin.close();
+        
+        
+            auto res = segment.find<float>("avgload");
+            float* v = res.first;
+            (*v) = instant;
+        
         }
         #endif
         

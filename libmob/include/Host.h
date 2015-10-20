@@ -37,6 +37,8 @@ namespace mob
         std::vector<float> capture_float(std::string prgm, std::string var);
         std::vector<float4> capture_float4(std::string prgm, std::string var, size_t timeout = 2000);
         
+        void set_float4(std::string prgm, std::string var, std::vector<float4> val);
+        
         void wait(std::string prgm, std::string kernel, size_t timeout = 5000);
         
     private:       

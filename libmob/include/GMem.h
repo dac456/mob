@@ -100,7 +100,7 @@ namespace mob
             *(((T*)mem)+idx) = val;
         }
         
-        void set(size_t idx, T val){
+        void set(size_t idx, T val, bool send_remote = true){
             //_gmem_set.lock();
 
             //TODO: update local (or remote) node with new value (?)
@@ -127,7 +127,7 @@ namespace mob
             
             TaskList::iterator itr = std::find(task_list->begin(), task_list->end(), idx);
             
-            if(itr == task_list->end()){
+            if(itr == task_list->end() && send_remote){
                 _send_mem(_name, val, idx);
             }
             //task_mtx.unlock();
@@ -166,6 +166,14 @@ namespace mob
             //_gmem_get.lock();
             assert(idx >= 0 && idx < _sz);
             _ref_count[idx]++;
+            
+            /*if(_ref_count[idx] >= 250){
+                if(_miss_map.count(idx)){
+                    _miss_map[idx].first = 0;
+                    _miss_map[idx].second = false;
+                }
+                _ref_count[idx] = 0;  
+            }*/  
 
             bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
             //task_mtx.lock();            
@@ -200,19 +208,30 @@ namespace mob
             }
             //task_mtx.unlock();          
             //_gmem_get.unlock();  
+                    
         }
         
         void remote_get_notify(std::string from_node, size_t task_idx, std::string var_name){
             //If this is the droid we're searching for...
             if(_waiting_for_remote.first == task_idx && var_name == _name && from_node != asio::ip::host_name()){
                 _waiting_for_remote.second = false;
-                _locality_miss(from_node, task_idx);
+                //_locality_miss(from_node, task_idx);
             }
         }
         
         void remote_move_notify(size_t task_idx){
             if(_miss_map.count(task_idx)){
                 _miss_map.at(task_idx).second = false;
+                
+                for(auto& mem : _mob_root->_allocated_mem){
+                    if(static_cast<gmem<T>*>(mem.second)->_miss_map.count(task_idx)){
+                        static_cast<gmem<T>*>(mem.second)->_miss_map.at(task_idx).first = 0;
+                    }
+                    static_cast<gmem<T>*>(mem.second)->_ref_count[task_idx] = 0; 
+                }
+                
+                
+                               
             }
         }
         
@@ -298,7 +317,9 @@ namespace mob
         }
         
         void _locality_miss(std::string from_node, size_t idx){
-            //std::cout << "_locality_miss " << idx << " " << from_node << std::endl;
+            //std::cout << "locality miss" << std::endl;
+            total_misses++;
+            
             if(!_miss_map.count(idx)){
                 _miss_map[idx] = std::make_pair(1, false);
             }
@@ -308,9 +329,20 @@ namespace mob
             
             float miss_ratio = float(_miss_map.at(idx).first) / float(_ref_count[idx]);
             //std::cout << float(_miss_map.at(idx).first) << " " << float(_ref_count[idx]) << " " << miss_ratio << std::endl;
-            if(miss_ratio > 0.75f && _ref_count[idx] > 200 && !_miss_map.at(idx).second){
-                _mob_root->_prgm_mov_task(from_node, idx);
-                _miss_map.at(idx).second = true;
+            if(miss_ratio > 0.4f && _ref_count[idx] > 225 && !_miss_map.at(idx).second){
+                bip::managed_shared_memory node_segment(bip::open_only, "mobnode");
+                auto res1 = node_segment.find<float>("avgload");
+                float* load = res1.first;
+                
+                auto res2 = node_segment.find<int>("numcpus");
+                int* num_cpus = res2.first;
+                
+                std::cout << *load << " " << *num_cpus << std::endl;
+                
+                //if(*load <= ((*num_cpus)*2)){
+                    _mob_root->_prgm_mov_task(from_node, idx);
+                    _miss_map.at(idx).second = true;
+                //}
             }
         }
         

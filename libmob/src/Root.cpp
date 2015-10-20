@@ -204,6 +204,10 @@ namespace mob
                     _handle_host_get_mem(msg);
                     break;
                     
+                case HOST_SET_MEM:
+                    _handle_host_set_mem(msg);
+                    break;
+                    
                 default:
                     break;
             }
@@ -447,6 +451,35 @@ namespace mob
             //std::cout << "end " << std::endl;  
         }      
         //_host_get_mem_mtx.unlock();
+    }
+    
+    void root::_handle_host_set_mem(node_message& msg){
+        std::cout << "host set mem" << std::endl;
+        
+        //Decode message
+        std::stringstream msg_stream;
+        msg_stream << msg.get_data();
+        
+        boost::archive::text_iarchive ia(msg_stream);
+        prgm_var_data data;
+        ia >> data;
+        
+        if(data.prgm_name == _prgm_name){
+            boost::thread fetch_mem([=](){
+                if(data.var_type == "float4"){
+                    if(data.var_indices.size()){
+                        gmem<float4>* mem = (gmem<float4>*)_allocated_mem.at(data.var_name); 
+            
+                        //std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
+                        size_t i=0;
+                        for(auto v : data.var_float4){
+                            (*mem).set(data.var_indices[i], v, false);
+                            i++;
+                        }   
+                    }         
+                }
+            });
+        }        
     }
     
     void root::_prgm_send_mem(node_message& msg){

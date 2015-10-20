@@ -67,6 +67,7 @@ namespace mob
         void _handle_prgm_move_tasks(node_message& msg);
         void _handle_host_exec_kernel(node_message& msg);
         void _handle_host_get_mem(node_message& msg);
+        void _handle_host_set_mem(node_message& msg);
         
         void _host_get_mem(prgm_var_data data, size_t sz);
         void _prgm_send_mem(node_message& msg);

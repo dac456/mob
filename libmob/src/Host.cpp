@@ -137,6 +137,38 @@ namespace mob
        return _capture_buffer_float4;
     }     
     
+    void host::set_float4(std::string prgm, std::string var, std::vector<float4> val){
+        size_t block_size = floor(200.0f/16.0f); //TODO: don't hardcode task list
+        for(size_t i=0; i<16; i++){
+            size_t start = i*block_size;
+            size_t end = start+block_size;
+                
+            node_message msg(HOST_SET_MEM); 
+            
+            prgm_var_data msg_data;
+            msg_data.host_name = asio::ip::host_name();
+            msg_data.prgm_name = prgm;
+            msg_data.var_name = var;
+            msg_data.var_type = "float4";
+            
+            for(size_t j=start; j<end; j++){
+                msg_data.var_float4.push_back(val[j]);
+                msg_data.var_indices.push_back(j);
+            }        
+            
+            std::stringstream msg_stream;
+            boost::archive::text_oarchive oa(msg_stream);
+            oa << msg_data;              
+            
+            msg.set_data(msg_stream.str().c_str(), msg_stream.str().size());   
+            std::pair<char*, size_t> msg_pair = msg.encode();
+            asio::ip::udp::endpoint ep(asio::ip::address_v4::broadcast(), PRGM_PORT);
+            
+            _socket.send_to(asio::buffer(msg_pair.first, msg_pair.second), ep);  
+            delete[] msg_pair.first;        
+        }
+    }
+    
     void host::wait(std::string prgm, std::string kernel, size_t timeout){
         std::cout << "host waiting..." << std::endl;
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -210,29 +242,33 @@ namespace mob
         
         //TODO: needs to be way more robust
         if(data.var_type == "float"){
-            size_t max = (*std::max_element(data.var_indices.begin(), data.var_indices.end())) + 1;
-            if(max > _capture_buffer_float.size()){
-                _capture_buffer_float.resize(max);
-            }  
-            //std::copy(data.var_float.begin(), data.var_float.end(), _capture_buffer_float.begin() + data.start);
-            size_t i=0;
-            for(auto v : data.var_float){
-                _capture_buffer_float[data.var_indices[i]] = v;
-                i++;
+            if(data.var_indices.size()){
+                size_t max = (*std::max_element(data.var_indices.begin(), data.var_indices.end())) + 1;
+                if(max > _capture_buffer_float.size()){
+                    _capture_buffer_float.resize(max);
+                }  
+                //std::copy(data.var_float.begin(), data.var_float.end(), _capture_buffer_float.begin() + data.start);
+                size_t i=0;
+                for(auto v : data.var_float){
+                    _capture_buffer_float[data.var_indices[i]] = v;
+                    i++;
+                }
             }
         }
         else if(data.var_type == "float4"){
-            size_t max = (*std::max_element(data.var_indices.begin(), data.var_indices.end())) + 1;
-            if(max > _capture_buffer_float4.size()){
-                _capture_buffer_float4.resize(max);
-            }   
-
-            //std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
-            size_t i=0;
-            for(auto v : data.var_float4){
-                _capture_buffer_float4[data.var_indices[i]] = v;
-                i++;
-            }            
+            if(data.var_indices.size()){
+                size_t max = (*std::max_element(data.var_indices.begin(), data.var_indices.end())) + 1;
+                if(max > _capture_buffer_float4.size()){
+                    _capture_buffer_float4.resize(max);
+                }   
+    
+                //std::copy(data.var_float4.begin(), data.var_float4.end(), _capture_buffer_float4.begin() + data.start);     
+                size_t i=0;
+                for(auto v : data.var_float4){
+                    _capture_buffer_float4[data.var_indices[i]] = v;
+                    i++;
+                }   
+            }         
         }
         
         /*if(_capture_count >= 3){

@@ -23,14 +23,14 @@ namespace mob
             bip::named_mutex task_mtx(bip::open_or_create, "task_mtx");
             task_mtx.lock();
             if(_threads_need_update){
-                for(auto t : _threads){
+                for(auto& t : _threads){
                     t.clear();
                 }
                 
                 bip::managed_shared_memory segment(bip::open_only, mob_root.get_name().c_str());      
                 TaskList* mem = segment.find<TaskList>("task_list").first;            
                 
-                while(mem->empty());
+                //while(mem->empty());
                 
                 std::cout << "got " << mem->size() << " tasks" << std::endl;
                 
